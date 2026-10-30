@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>FPV Flight Simulator - SBS RANGSIT -TJohn Edition</title>
+<title>FPV Flight Simulator - SBS RANGSIT Edition</title>
 <style>
 :root{--bg:#0b1220;--fg:#eef5ff;--panel:rgba(8,16,30,.6);--acc:#9ae6ff;--warn:#ffb454;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:dark}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -54,8 +54,8 @@ button.on{background:var(--acc);color:#06121f}
 <div class="p" id="msg"></div>
 
 <div class="p" id="start">
-  <h1>SBS RANGSIT -TJohn FPV Simulator</h1>
-  <p>Fly through <b>all 10 branded rings</b> first — only then can you land safely on the runway. Choose your control style below.</p>
+  <h1>SBS RANGSIT FPV Simulator</h1>
+  <p>Fly through <b>all 10 branded rings</b> as fast as you can — only then can you land safely on the runway. Your total flight time will be tracked!</p>
   <button id="sT">Start with tilt (tablet)</button>
   <button id="sS">Start with screen drag (iPad touch)</button>
   <button id="sK">Start with keyboard</button>
@@ -164,26 +164,26 @@ const ringMatPending = new THREE.MeshLambertMaterial({color:0xff3333, emissive:0
 const ringMatNext    = new THREE.MeshLambertMaterial({color:0x00d2ff, emissive:0x004488});
 const ringMatDone    = new THREE.MeshStandardMaterial({color:0x39ff14, emissive:0x11ff11, emissiveIntensity:0.8, roughness:0.2});
 
-// Dynamic Canvas Texture Helper for "SBS RANGSIT -TJohn" + Ring Number
+// Dynamic Canvas Texture Helper for "SBS RANGSIT" + Extra Large Ring Number
 function createRingLabelTexture(num) {
   const canvas = document.createElement('canvas');
-  canvas.width = 512; canvas.height = 128;
+  canvas.width = 512; canvas.height = 160;
   const ctx = canvas.getContext('2d');
   
   ctx.fillStyle = '#081428';
-  ctx.fillRect(0,0,512,128);
+  ctx.fillRect(0,0,512,160);
   ctx.strokeStyle = '#00d2ff';
   ctx.lineWidth = 8;
-  ctx.strokeRect(4,4,504,120);
+  ctx.strokeRect(4,4,504,152);
   
   ctx.fillStyle = '#9ae6ff';
-  ctx.font = 'bold 36px sans-serif';
+  ctx.font = 'bold 32px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('SBS RANGSIT -TJohn', 256, 48);
+  ctx.fillText('SBS RANGSIT', 256, 42);
   
   ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 44px sans-serif';
-  ctx.fillText(`RING #${num}`, 256, 102);
+  ctx.font = '900 84px sans-serif';
+  ctx.fillText(`#${num}`, 256, 128);
 
   return new THREE.CanvasTexture(canvas);
 }
@@ -217,12 +217,12 @@ function buildRingCourse(){
     mesh.quaternion.copy(q);
     ringContainer.add(mesh);
 
-    // Top Sign Banner (SBS RANGSIT -TJohn)
+    // Top Sign Banner (SBS RANGSIT + Extra Large Number)
     const labelTex = createRingLabelTexture(i+1);
-    const labelGeo = new THREE.PlaneGeometry(30, 7.5);
+    const labelGeo = new THREE.PlaneGeometry(32, 10);
     const labelMat = new THREE.MeshBasicMaterial({map: labelTex, side: THREE.DoubleSide});
     const labelMesh = new THREE.Mesh(labelGeo, labelMat);
-    labelMesh.position.set(0, RING_R + 7, 0);
+    labelMesh.position.set(0, RING_R + 8, 0);
     labelMesh.quaternion.copy(q);
     ringContainer.add(labelMesh);
 
@@ -235,8 +235,19 @@ buildRingCourse();
 let ringsCleared = 0;
 let ringsUnlockedLanding = false;
 
+// ==== TIMER TRACKING ====
+let elapsedTime = 0;
+let timerRunning = false;
+
+function formatTime(s){
+  const m = Math.floor(s / 60);
+  const sec = (s % 60).toFixed(1);
+  return `${m}:${sec.padStart(4, '0')}`;
+}
+
 function resetRings(){
   ringsCleared = 0; ringsUnlockedLanding=false;
+  elapsedTime = 0; timerRunning = true;
   for(const r of rings){ r.cleared=false; r.mesh.material = ringMatPending; }
   if(rings[0]) rings[0].mesh.material = ringMatNext;
 }
@@ -268,10 +279,10 @@ function checkRings(prevP, curP){
       updateRingMaterials();
       if(ringsCleared >= RING_N){
         ringsUnlockedLanding = true;
-        msg('SBS RANGSIT -TJohn Course Cleared! You may land now!');
+        msg('SBS RANGSIT Course Cleared! You may land now!');
         setTimeout(()=>{ if($('msg').textContent.indexOf('SBS')===0) msg(''); }, 4000);
       } else {
-        msg(`Ring ${ringsCleared}/${RING_N} Passed! (SBS RANGSIT -TJohn)`);
+        msg(`Ring ${ringsCleared}/${RING_N} Passed! (SBS RANGSIT)`);
         setTimeout(()=>{ if($('msg').textContent.indexOf('Ring')===0) msg(''); }, 1200);
       }
     }
@@ -292,9 +303,9 @@ function reset(){
 function msg(t){ const m=$('msg'); m.style.display=t?'block':'none'; m.textContent=t; }
 reset();
 
-// HUD UI Bar Setup
-const items=[['SPEED','sp'],['HEIGHT','al'],['THR','th'],['V/S','vs'],['HEADING','hd'],['RINGS','rg'],['BAT','bt']];
-$('bar').innerHTML=items.map(a=>`<div><i>${a[0]}</i><b id="${a[1]}">0</b></div>`).join('');
+// HUD UI Bar Setup with TIME counter
+const items=[['TIME','tm'],['SPEED','sp'],['HEIGHT','al'],['THR','th'],['V/S','vs'],['HEADING','hd'],['RINGS','rg'],['BAT','bt']];
+$('bar').innerHTML=items.map(a=>`<div><i>${a[0]}</i><b id="${a[1]}">0:00.0</b></div>`).join('');
 
 const hc=$('hc'), hx=hc.getContext('2d'); let dpr=1;
 function resize(){
@@ -545,16 +556,16 @@ function step(dt){
     const softLand = vs>-4.5 && v.length()<32 && u.y>.8;
 
     if(softLand && canLand && onRw){
-      state='landed'; p.y=gh+1; v.y=0;
-      msg(`Landed safely! Touchdown speed: ${vs.toFixed(1)} m/s.`);
+      state='landed'; p.y=gh+1; v.y=0; timerRunning = false;
+      msg(`Landed safely! Final Flight Time: ${formatTime(elapsedTime)}`);
     } else if(softLand && !onRw){
-      state='crashed'; crashT=2;
-      msg(ringsUnlockedLanding ? 'Off runway — align with the runway to land!' : 'Clear all 10 SBS RANGSIT -TJohn rings first!');
+      state='crashed'; crashT=2; timerRunning = false;
+      msg(ringsUnlockedLanding ? 'Off runway — align with the runway to land!' : 'Clear all 10 SBS RANGSIT rings first!');
     } else if(softLand && onRw && !canLand){
-      state='crashed'; crashT=2;
+      state='crashed'; crashT=2; timerRunning = false;
       msg(`Clear all 10 rings to unlock landing (${ringsCleared}/${RING_N}).`);
     } else {
-      state='crashed'; crashT=3; msg('Crashed. Restarting…');
+      state='crashed'; crashT=3; timerRunning = false; msg('Crashed. Restarting…');
     }
   }
 
@@ -566,7 +577,10 @@ function frame(now){
   const dt=Math.min(.05,(now-last)/1000); last=now;
 
   if(started){
-    if(state==='fly') step(dt);
+    if(state==='fly'){
+      step(dt);
+      if(timerRunning) elapsedTime += dt;
+    }
     else if(state==='landed'){ v.multiplyScalar(Math.exp(-.7*dt)); p.addScaledVector(v,dt); p.y=hgt(p.x,p.z)+1.3; spin=0; }
     else if(state==='crashed'){ spin=0; crashT-=dt; if(crashT<=0) reset(); }
   }
@@ -590,6 +604,7 @@ function frame(now){
   const spd=v.length();
   const agl=Math.max(0,p.y-gh);
 
+  $('tm').textContent=formatTime(elapsedTime);
   $('sp').textContent=spd.toFixed(1);
   $('al').textContent=agl.toFixed(0);
   $('th').textContent=Math.round(thr*100)+'%';
