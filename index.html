@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8">
+<html lang="en">
+<head>
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>FPV Flight Simulator</title>
 <style>
@@ -7,249 +9,563 @@
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font:600 13px/1.3 "Trebuchet MS",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none}
 canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
-#hc{pointer-events:none}
-.p{position:fixed;background:var(--panel);border-radius:10px;padding:8px 12px;backdrop-filter:blur(4px)}
+#hc{pointer-events:none;z-index:2}
+.p{position:fixed;background:var(--panel);border-radius:10px;padding:8px 12px;backdrop-filter:blur(4px);z-index:3}
 #tl{top:calc(env(safe-area-inset-top,0px) + 10px);left:12px}
+#mm{top:calc(env(safe-area-inset-top,0px) + 42px);left:12px;width:130px;height:130px;padding:0;overflow:hidden;border-radius:50%;border:2px solid var(--acc)}
+#mmc{width:100%;height:100%;display:block}
 #tr{top:calc(env(safe-area-inset-top,0px) + 10px);right:12px;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:70vw;background:none;padding:0}
 button{font:inherit;color:var(--fg);background:var(--panel);border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:9px 13px;cursor:pointer;backdrop-filter:blur(4px)}
 button.on{background:var(--acc);color:#06121f}
 #bar{bottom:calc(env(safe-area-inset-bottom,0px) + 12px);left:50%;transform:translateX(-50%);display:flex;gap:0;padding:0}
-#bar div{padding:8px 14px;border-right:1px solid rgba(255,255,255,.15);text-align:left;min-width:54px}
+#bar div{padding:8px 12px;border-right:1px solid rgba(255,255,255,.15);text-align:left;min-width:50px}
 #bar div:last-child{border:0}
 #bar i{display:block;font-style:normal;font-size:10px;opacity:.7}
-#bar b{font-size:18px}
-#thr{left:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 90px);width:58px;height:42vh;padding:0;touch-action:none;overflow:hidden}
+#bar b{font-size:16px}
+#thr{left:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 90px);width:58px;height:38vh;padding:0;touch-action:none;overflow:hidden}
 #fill{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(0deg,#2b9bd6,var(--acc));opacity:.75}
-#tv{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl;font-size:14px;text-shadow:0 1px 3px #000}
+#tv{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl;font-size:13px;text-shadow:0 1px 3px #000}
 #msg{top:30%;left:50%;transform:translateX(-50%);font-size:20px;text-align:center;display:none;max-width:80vw}
-#start{inset:0;border-radius:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(6,12,24,.82);text-align:center;padding:24px}
+#start{inset:0;border-radius:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(6,12,24,.88);text-align:center;padding:24px;z-index:10}
 #start h1{margin:0;font-size:30px}
 #start p{margin:0;max-width:560px;font-weight:500;opacity:.9}
-#start button{font-size:17px;padding:14px 22px;min-width:260px}
+#start button{font-size:16px;padding:12px 20px;min-width:250px}
 #note{color:var(--warn)}
-</style></head><body>
-<canvas id="r"></canvas><canvas id="hc"></canvas>
+</style>
+</head>
+<body>
+<canvas id="r"></canvas>
+<canvas id="hc"></canvas>
+
 <div class="p" id="tl"><span id="cam">FPV</span> · <span id="ctl">KEYS</span></div>
+<div class="p" id="mm"><canvas id="mmc" width="260" height="260"></canvas></div>
+
 <div id="tr" class="p">
-<button id="bC">Camera</button><button id="bR">Reset</button><button id="bK">Calibrate</button><button id="bI">Invert pitch</button><button id="bA" class="on">Assist</button><button id="bF">Fullscreen</button>
+  <button id="bC">Camera</button>
+  <button id="bR">Reset</button>
+  <button id="bK">Calibrate</button>
+  <button id="bI">Invert pitch</button>
+  <button id="bA" class="on">Assist</button>
+  <button id="bF">Fullscreen</button>
 </div>
+
 <div class="p" id="thr"><div id="fill"></div><div id="tv">THROTTLE 50%</div></div>
 <div class="p" id="bar"></div>
 <div class="p" id="msg"></div>
+
 <div class="p" id="start">
-<h1>FPV Flight Simulator</h1>
-<p>Fixed-wing countryside flight with a landing field. Choose your control style below — tilt your device, drag on the screen, or use the keyboard.</p>
-<button id="sT">Start with tilt (tablet)</button>
-<button id="sS">Start with screen drag (iPad touch)</button>
-<button id="sK">Start with keyboard</button>
-<p>Keyboard: arrows = roll and pitch (up arrow = nose down), A/D = yaw, W/S = throttle, C = camera, R = reset.</p>
-<p id="note"></p>
+  <h1>FPV Flight Simulator</h1>
+  <p>Fly through <b>all 10 rings</b> first — only then can you land safely on the runway. Choose your control style below.</p>
+  <button id="sT">Start with tilt (tablet)</button>
+  <button id="sS">Start with screen drag (iPad touch)</button>
+  <button id="sK">Start with keyboard</button>
+  <p>Keyboard: arrows = roll/pitch (Up = nose down), A/D = yaw, W/S = throttle, C = camera, R = reset.</p>
+  <p id="note"></p>
 </div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const V3=THREE.Vector3,Q=THREE.Quaternion;
-const X=new V3(1,0,0),Y=new V3(0,1,0),Z=new V3(0,0,1);
+const V3=THREE.Vector3, Q=THREE.Quaternion;
+const X=new V3(1,0,0), Y=new V3(0,1,0), Z=new V3(0,0,1);
 const clamp=(x,a=-1,b=1)=>Math.max(a,Math.min(b,x));
-const renderer=new THREE.WebGLRenderer({canvas:$('r'),antialias:true});
-const scene=new THREE.Scene();scene.background=new THREE.Color(0x8cb8e6);scene.fog=new THREE.Fog(0x8cb8e6,500,3800);
+
+const renderer=new THREE.WebGLRenderer({canvas:$('r'), antialias:true});
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x8cb8e6);
+scene.fog=new THREE.Fog(0x8cb8e6,500,3800);
+
 const cam=new THREE.PerspectiveCamera(70,1,.5,7000);
 scene.add(new THREE.HemisphereLight(0xcfe6ff,0x4a5a2a,.95));
-const sun=new THREE.DirectionalLight(0xfff2d0,.85);sun.position.set(300,500,200);scene.add(sun);
-// terrain: flat around the runway, hills and mountains farther out
-function hgt(x,z){const d=Math.hypot(x,z),k=clamp((d-700)/900,0,1),s=k*k*(3-2*k);
- const n=Math.sin(x*.0021)*Math.cos(z*.0017)*40+Math.sin(x*.006+z*.004)*12+Math.sin(z*.011-x*.007)*5;
- const m=d>1800?Math.pow((d-1800)/1500,2)*260:0;return(n+m)*s;}
-const tg=new THREE.PlaneGeometry(9000,9000,180,180);tg.rotateX(-Math.PI/2);
-{const p=tg.attributes.position,col=new Float32Array(p.count*3),c=new THREE.Color();
-for(let i=0;i<p.count;i++){const x=p.getX(i),z=p.getZ(i),h=hgt(x,z);p.setY(i,h);
- const j=(Math.sin(x*.05)*Math.cos(z*.07)+1)/2;c.setHSL(.24-.03*j,.45,.28+.09*j);
- if(h>90)c.lerp(new THREE.Color(0x8a7e66),clamp((h-90)/60,0,1));if(h>170)c.lerp(new THREE.Color(0xffffff),clamp((h-170)/50,0,1));
- col.set([c.r,c.g,c.b],i*3);}
-tg.setAttribute('color',new THREE.BufferAttribute(col,3));tg.computeVertexNormals();}
+const sun=new THREE.DirectionalLight(0xfff2d0,.85);
+sun.position.set(300,500,200);
+scene.add(sun);
+
+// Terrain
+function hgt(x,z){
+  const d=Math.hypot(x,z), k=clamp((d-700)/900,0,1), s=k*k*(3-2*k);
+  const n=Math.sin(x*.0021)*Math.cos(z*.0017)*40+Math.sin(x*.006+z*.004)*12+Math.sin(z*.011-x*.007)*5;
+  const m=d>1800?Math.pow((d-1800)/1500,2)*260:0;
+  return(n+m)*s;
+}
+
+const tg=new THREE.PlaneGeometry(9000,9000,180,180);
+tg.rotateX(-Math.PI/2);
+{
+  const p=tg.attributes.position, col=new Float32Array(p.count*3), c=new THREE.Color();
+  for(let i=0;i<p.count;i++){
+    const x=p.getX(i), z=p.getZ(i), h=hgt(x,z);
+    p.setY(i,h);
+    const j=(Math.sin(x*.05)*Math.cos(z*.07)+1)/2;
+    c.setHSL(.24-.03*j,.45,.28+.09*j);
+    if(h>90)c.lerp(new THREE.Color(0x8a7e66),clamp((h-90)/60,0,1));
+    if(h>170)c.lerp(new THREE.Color(0xffffff),clamp((h-170)/50,0,1));
+    col.set([c.r,c.g,c.b],i*3);
+  }
+  tg.setAttribute('color',new THREE.BufferAttribute(col,3));
+  tg.computeVertexNormals();
+}
 scene.add(new THREE.Mesh(tg,new THREE.MeshLambertMaterial({vertexColors:true})));
-// runway along the z axis (heading 000)
-const rw=new THREE.Mesh(new THREE.BoxGeometry(30,.3,900),new THREE.MeshLambertMaterial({color:0x3a3d42}));rw.position.y=.15;scene.add(rw);
-const dg=new THREE.BoxGeometry(1,.32,24),dm=new THREE.MeshBasicMaterial({color:0xffffff});
-for(let i=0;i<17;i++){const d=new THREE.Mesh(dg,dm);d.position.set(0,.16,-400+i*50);scene.add(d);}
-// trees
-{const tm=new THREE.InstancedMesh(new THREE.ConeGeometry(5,18,6).translate(0,9,0),new THREE.MeshLambertMaterial({color:0x2f5d2a}),900),m4=new THREE.Matrix4();let n=0;
-while(n<900){const x=(Math.random()-.5)*7000,z=(Math.random()-.5)*7000,d=Math.hypot(x,z);
- if(d<120||(Math.abs(x)<50&&Math.abs(z)<520)||d>2400)continue;const s=.7+Math.random()*1.2;
- m4.makeScale(s,s,s).setPosition(x,hgt(x,z),z);tm.setMatrixAt(n++,m4);}scene.add(tm);}
-// clouds
-{const cm=new THREE.MeshBasicMaterial({color:0xffffff,fog:false,transparent:true,opacity:.9});
-for(let i=0;i<24;i++){const c=new THREE.Mesh(new THREE.SphereGeometry(1,8,6),cm);c.scale.set(120+Math.random()*120,25,70+Math.random()*60);
- c.position.set((Math.random()-.5)*6000,350+Math.random()*250,(Math.random()-.5)*6000);scene.add(c);}}
-// aircraft model
-const plane=new THREE.Group(),mat=c=>new THREE.MeshLambertMaterial({color:c});
-const bx=(w,h,d,c,x,y,z)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(c));m.position.set(x,y,z);plane.add(m);return m;};
-bx(1.2,1.2,6,0xf4f4f4,0,0,0);bx(14,.25,2,0xff6a1a,0,.2,-.3);bx(5,.2,1.4,0xff6a1a,0,.2,2.7);bx(.2,1.8,1.4,0xff6a1a,0,.9,2.7);
-const prop=bx(.2,3,.3,0x222222,0,0,-3.1);scene.add(plane);
-// state
-let p=new V3(),q=new Q(),v=new V3(),thr=.5,bat=100,state='fly',mode=0,assist=true,invert=false,started=false;
-let tilt=false, tiltTimer=0;
-let dragMode=false; // screen drag control
-const keys={};let raw=null,cal=null,tRoll=0,tPitch=0,tXY=[0,0];
+
+// Runway along z-axis
+const rw=new THREE.Mesh(new THREE.BoxGeometry(30,.3,900),new THREE.MeshLambertMaterial({color:0x3a3d42}));
+rw.position.y=.15; scene.add(rw);
+const dg=new THREE.BoxGeometry(1,.32,24), dm=new THREE.MeshBasicMaterial({color:0xffffff});
+for(let i=0;i<17;i++){
+  const d=new THREE.Mesh(dg,dm); d.position.set(0,.16,-400+i*50); scene.add(d);
+}
+
+// Trees
+{
+  const tm=new THREE.InstancedMesh(new THREE.ConeGeometry(5,18,6).translate(0,9,0),new THREE.MeshLambertMaterial({color:0x2f5d2a}),900), m4=new THREE.Matrix4();
+  let n=0;
+  while(n<900){
+    const x=(Math.random()-.5)*7000, z=(Math.random()-.5)*7000, d=Math.hypot(x,z);
+    if(d<120||(Math.abs(x)<50&&Math.abs(z)<520)||d>2400)continue;
+    const s=.7+Math.random()*1.2;
+    m4.makeScale(s,s,s).setPosition(x,hgt(x,z),z);
+    tm.setMatrixAt(n++,m4);
+  }
+  scene.add(tm);
+}
+
+// Clouds
+{
+  const cm=new THREE.MeshBasicMaterial({color:0xffffff,fog:false,transparent:true,opacity:.9});
+  for(let i=0;i<24;i++){
+    const c=new THREE.Mesh(new THREE.SphereGeometry(1,8,6),cm);
+    c.scale.set(120+Math.random()*120,25,70+Math.random()*60);
+    c.position.set((Math.random()-.5)*6000,350+Math.random()*250,(Math.random()-.5)*6000);
+    scene.add(c);
+  }
+}
+
+// Plane
+const plane=new THREE.Group(), mat=c=>new THREE.MeshLambertMaterial({color:c});
+const bx=(w,h,d,c,x,y,z)=>{
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(c));
+  m.position.set(x,y,z); plane.add(m); return m;
+};
+bx(1.2,1.2,6,0xf4f4f4,0,0,0);
+bx(14,.25,2,0xff6a1a,0,.2,-.3);
+bx(5,.2,1.4,0xff6a1a,0,.2,2.7);
+bx(.2,1.8,1.4,0xff6a1a,0,.9,2.7);
+const prop=bx(.2,3,.3,0x222222,0,0,-3.1);
+scene.add(plane);
+
+// ==== RINGS COURSE ====
+const RING_N = 10;
+const rings = []; 
+const ringGroup = new THREE.Group(); scene.add(ringGroup);
+const RING_R = 22;
+const RING_TUBE = 2.2;
+const ringGeo = new THREE.TorusGeometry(RING_R, RING_TUBE, 12, 40);
+const ringMatPending = new THREE.MeshLambertMaterial({color:0xff5a5a, emissive:0x551010});
+const ringMatNext    = new THREE.MeshLambertMaterial({color:0x9ae6ff, emissive:0x1b4a5a});
+const ringMatDone    = new THREE.MeshLambertMaterial({color:0x59ff9b, emissive:0x0d3a1e});
+
+function buildRingCourse(){
+  const pts = [
+    [  0, 95,  820],
+    [-120, 90,  520],
+    [ 160, 85,  220],
+    [-180, 78, -120],
+    [ 140, 72, -460],
+    [ -90, 68, -780],
+    [ 220, 72,-1000],
+    [-160, 80,-1180],
+    [  60, 86, -980],
+    [   0, 90, -560]
+  ];
+  for(let i=0;i<RING_N;i++){
+    const [x,y,z]=pts[i];
+    const next = i<RING_N-1 ? pts[i+1] : [0,70,0];
+    const dir = new V3(next[0]-x, next[1]-y, next[2]-z).normalize();
+    const pos = new V3(x,y,z);
+    const mesh = new THREE.Mesh(ringGeo, ringMatPending);
+    mesh.position.copy(pos);
+    const q = new Q().setFromUnitVectors(Z, dir);
+    mesh.quaternion.copy(q);
+    ringGroup.add(mesh);
+    rings.push({mesh, pos, axis:dir.clone(), radius:RING_R, cleared:false, idx:i});
+  }
+}
+buildRingCourse();
+
+let ringsCleared = 0;
+let ringsUnlockedLanding = false;
+
+function resetRings(){
+  ringsCleared = 0; ringsUnlockedLanding=false;
+  for(const r of rings){ r.cleared=false; r.mesh.material = ringMatPending; r.mesh.visible=true; }
+  if(rings[0]) rings[0].mesh.material = ringMatNext;
+}
+resetRings();
+
+function updateRingMaterials(){
+  for(let i=0;i<rings.length;i++){
+    const r=rings[i];
+    if(r.cleared) r.mesh.material = ringMatDone;
+    else if(i===ringsCleared) r.mesh.material = ringMatNext;
+    else r.mesh.material = ringMatPending;
+  }
+}
+
+function checkRings(prevP, curP){
+  if(ringsUnlockedLanding) return;
+  const r = rings[ringsCleared];
+  if(!r) return;
+  
+  const a = prevP.clone().sub(r.pos).dot(r.axis);
+  const b = curP.clone().sub(r.pos).dot(r.axis);
+  if(a*b <= 0 && a!==b){
+    const t = a/(a-b);
+    const hit = prevP.clone().lerp(curP, t);
+    const d = hit.distanceTo(r.pos);
+    if(d < r.radius){
+      r.cleared = true;
+      ringsCleared++;
+      updateRingMaterials();
+      if(ringsCleared >= RING_N){
+        ringsUnlockedLanding = true;
+        msg('All 10 rings cleared! You may now land on the runway.');
+        setTimeout(()=>{ if($('msg').textContent.indexOf('All 10')===0) msg(''); }, 4000);
+      } else {
+        msg(`Ring ${ringsCleared}/${RING_N} cleared!`);
+        setTimeout(()=>{ if($('msg').textContent.indexOf('Ring')===0) msg(''); }, 1200);
+      }
+    }
+  }
+}
+
+// Flight State Variables
+let p=new V3(), q=new Q(), v=new V3(), thr=.5, bat=100, state='fly', mode=0, assist=true, invert=false, started=false;
+let tilt=false, tiltTimer=0, dragMode=false;
+const keys={}; let raw=null, cal=null, tRoll=0, tPitch=0;
 let dragActive=false, dragStartX=0, dragStartY=0, dragCurX=0, dragCurY=0, dragRoll=0, dragPitch=0;
 
-function reset(){p.set(0,80,1000);q.identity();v.set(0,0,-22);thr=.5;bat=100;state='fly';msg('');dragRoll=0;dragPitch=0;}
-function msg(t){const m=$('msg');m.style.display=t?'block':'none';m.textContent=t;}
+function reset(){
+  p.set(0,80,1000); q.identity(); v.set(0,0,-22); thr=.5; bat=100; state='fly'; msg('');
+  dragRoll=0; dragPitch=0;
+  resetRings();
+}
+function msg(t){ const m=$('msg'); m.style.display=t?'block':'none'; m.textContent=t; }
 reset();
-// HUD
-const items=[['SPEED','sp'],['HEIGHT','al'],['THR','th'],['V/S','vs'],['HEADING','hd'],['BAT','bt']];
-$('bar').innerHTML=items.map(a=>`<div><i>${a[0]}</i><b id="${a[1]}">0</b></div>`).join('');
-const hc=$('hc'),hx=hc.getContext('2d');let dpr=1;
-function resize(){dpr=Math.min(devicePixelRatio||1,2);renderer.setPixelRatio(dpr);renderer.setSize(innerWidth,innerHeight,false);
- cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();hc.width=innerWidth*dpr;hc.height=innerHeight*dpr;}
-addEventListener('resize',resize);resize();
-function drawHud(f,r,u,hdg,spd,agl){
- const W=hc.width,H=hc.height;hx.clearRect(0,0,W,H);if(mode!==0)return;
- const pitch=Math.asin(clamp(f.y))*57.3,bank=Math.atan2(-r.y,u.y),px=H/70;
- hx.save();hx.translate(W/2,H/2);hx.rotate(-bank);hx.strokeStyle='rgba(255,255,255,.9)';hx.fillStyle='#fff';hx.lineWidth=2*dpr;hx.font=`${12*dpr}px monospace`;
- for(let a=-30;a<=30;a+=10){const y=(pitch-a)*px;if(Math.abs(y)>H)continue;
-  hx.setLineDash(a<0?[8*dpr,6*dpr]:[]);hx.beginPath();
-  if(a===0){hx.moveTo(-W*.4,y);hx.lineTo(-W*.07,y);hx.moveTo(W*.07,y);hx.lineTo(W*.4,y);}
-  else{hx.moveTo(-90*dpr,y);hx.lineTo(-30*dpr,y);hx.moveTo(30*dpr,y);hx.lineTo(90*dpr,y);hx.fillText(Math.abs(a),-125*dpr,y+4*dpr);hx.fillText(Math.abs(a),98*dpr,y+4*dpr);}
-  hx.stroke();}
- hx.restore();hx.setLineDash([]);hx.strokeStyle='#fff';hx.fillStyle='#fff';hx.lineWidth=2*dpr;
- const cx=W/2,cy=H/2;hx.beginPath();hx.arc(cx,cy,9*dpr,0,7);hx.moveTo(cx-26*dpr,cy);hx.lineTo(cx-9*dpr,cy);hx.moveTo(cx+9*dpr,cy);hx.lineTo(cx+26*dpr,cy);hx.moveTo(cx,cy-9*dpr);hx.lineTo(cx,cy-20*dpr);hx.stroke();
- hx.font=`bold ${16*dpr}px monospace`;hx.textAlign='right';hx.fillText(spd.toFixed(1)+' m/s',cx-150*dpr,cy+5*dpr);
- hx.textAlign='left';hx.fillText(agl.toFixed(0)+' m AGL',cx+150*dpr,cy+5*dpr);
- hx.textAlign='center';hx.fillText(String(Math.round(hdg)%360).padStart(3,'0')+'°',cx,40*dpr+0);}
-// input
-addEventListener('keydown',e=>{keys[e.code]=1;if(e.code==='KeyC')camNext();if(e.code==='KeyR')reset();if(e.code==='Digit1')mode=0,camLbl();if(e.code==='Digit2')mode=1,camLbl();if(e.code==='Digit3')mode=2,camLbl();if(e.code.startsWith('Arrow')||e.code==='Space')e.preventDefault();});
-addEventListener('keyup',e=>keys[e.code]=0);
-function camLbl(){$('cam').textContent=['FPV','Chase','Ground'][mode];plane.visible=mode!==0;}
-function camNext(){mode=(mode+1)%3;camLbl();}
-$('bC').onclick=camNext;$('bR').onclick=reset;$('bK').onclick=()=>{if(raw)cal={...raw};};
-$('bI').onclick=e=>{invert=!invert;e.target.classList.toggle('on',invert);};
-$('bA').onclick=e=>{assist=!assist;e.target.classList.toggle('on',assist);};
-$('bF').onclick=()=>{const d=document.documentElement;(d.requestFullscreen||d.webkitRequestFullscreen||(()=>{})).call(d);};
-const th=$('thr');
-function setThr(e){const b=th.getBoundingClientRect();thr=clamp(1-(e.clientY-b.top)/b.height,0,1);}
-th.addEventListener('pointerdown',e=>{th.setPointerCapture(e.pointerId);setThr(e);});
-th.addEventListener('pointermove',e=>{if(th.hasPointerCapture(e.pointerId))setThr(e);});
 
-// === Screen drag input (iPad) ===
+// HUD Bar Elements
+const items=[['SPEED','sp'],['HEIGHT','al'],['THR','th'],['V/S','vs'],['HEADING','hd'],['RINGS','rg'],['BAT','bt']];
+$('bar').innerHTML=items.map(a=>`<div><i>${a[0]}</i><b id="${a[1]}">0</b></div>`).join('');
+
+const hc=$('hc'), hx=hc.getContext('2d'); let dpr=1;
+function resize(){
+  dpr=Math.min(devicePixelRatio||1,2);
+  renderer.setPixelRatio(dpr);
+  renderer.setSize(innerWidth,innerHeight,false);
+  cam.aspect=innerWidth/innerHeight;
+  cam.updateProjectionMatrix();
+  hc.width=innerWidth*dpr;
+  hc.height=innerHeight*dpr;
+}
+addEventListener('resize',resize); resize();
+
+function drawHud(f,r,u,hdg,spd,agl){
+  const W=hc.width, H=hc.height;
+  hx.clearRect(0,0,W,H);
+  if(mode!==0) return;
+
+  const pitch=Math.asin(clamp(f.y))*57.3, bank=Math.atan2(-r.y,u.y), px=H/70;
+  hx.save();
+  hx.translate(W/2,H/2);
+  hx.rotate(-bank);
+  hx.strokeStyle='rgba(255,255,255,.9)'; hx.fillStyle='#fff'; hx.lineWidth=2*dpr; hx.font=`${12*dpr}px monospace`;
+
+  for(let a=-30;a<=30;a+=10){
+    const y=(pitch-a)*px; if(Math.abs(y)>H) continue;
+    hx.setLineDash(a<0?[8*dpr,6*dpr]:[]);
+    hx.beginPath();
+    if(a===0){
+      hx.moveTo(-W*.4,y); hx.lineTo(-W*.07,y); hx.moveTo(W*.07,y); hx.lineTo(W*.4,y);
+    } else {
+      hx.moveTo(-90*dpr,y); hx.lineTo(-30*dpr,y); hx.moveTo(30*dpr,y); hx.lineTo(90*dpr,y);
+      hx.fillText(Math.abs(a),-125*dpr,y+4*dpr); hx.fillText(Math.abs(a),98*dpr,y+4*dpr);
+    }
+    hx.stroke();
+  }
+  hx.restore();
+
+  hx.setLineDash([]); hx.strokeStyle='#fff'; hx.fillStyle='#fff'; hx.lineWidth=2*dpr;
+  const cx=W/2, cy=H/2;
+  hx.beginPath();
+  hx.arc(cx,cy,9*dpr,0,7);
+  hx.moveTo(cx-26*dpr,cy); hx.lineTo(cx-9*dpr,cy);
+  hx.moveTo(cx+9*dpr,cy); hx.lineTo(cx+26*dpr,cy);
+  hx.moveTo(cx,cy-9*dpr); hx.lineTo(cx,cy-20*dpr);
+  hx.stroke();
+
+  hx.font=`bold ${16*dpr}px monospace`;
+  hx.textAlign='right'; hx.fillText(spd.toFixed(1)+' m/s',cx-150*dpr,cy+5*dpr);
+  hx.textAlign='left'; hx.fillText(agl.toFixed(0)+' m AGL',cx+150*dpr,cy+5*dpr);
+  hx.textAlign='center'; hx.fillText(String(Math.round(hdg)%360).padStart(3,'0')+'°',cx,40*dpr);
+}
+
+// ==== MINI-MAP ====
+const mmc=$('mmc'), mmx=mmc.getContext('2d');
+const MM_W=mmc.width, MM_H=mmc.height;
+const MM_SCALE = MM_W/2400;
+
+function drawMiniMap(){
+  const cx=MM_W/2, cy=MM_H/2, R=MM_W/2;
+  mmx.clearRect(0,0,MM_W,MM_H);
+  mmx.save();
+  mmx.beginPath(); mmx.arc(cx,cy,R-2,0,7); mmx.clip();
+
+  mmx.fillStyle='rgba(8,20,36,0.85)'; mmx.fillRect(0,0,MM_W,MM_H);
+
+  const sx = x => cx + (x - p.x)*MM_SCALE;
+  const sz = z => cy + (z - p.z)*MM_SCALE;
+
+  // Runway
+  mmx.strokeStyle='#6a6f78'; mmx.lineWidth=6;
+  mmx.beginPath(); mmx.moveTo(sx(0),sz(-450)); mmx.lineTo(sx(0),sz(450)); mmx.stroke();
+
+  // Rings
+  for(let i=0;i<rings.length;i++){
+    const r=rings[i];
+    const x=sx(r.pos.x), y=sz(r.pos.z);
+    if(x<-20||x>MM_W+20||y<-20||y>MM_H+20) continue;
+    mmx.beginPath(); mmx.arc(x,y,6,0,7);
+    if(r.cleared) mmx.fillStyle='#59ff9b';
+    else if(i===ringsCleared) mmx.fillStyle='#9ae6ff';
+    else mmx.fillStyle='#ff5a5a';
+    mmx.fill();
+    if(i===ringsCleared){ mmx.strokeStyle='#fff'; mmx.lineWidth=2; mmx.stroke(); }
+  }
+
+  // Aircraft indicator
+  let hf = new V3(0,0,-1).applyQuaternion(q);
+  const hx2 = Math.atan2(hf.x, -hf.z);
+  mmx.save(); mmx.translate(cx,cy); mmx.rotate(hx2);
+  mmx.fillStyle='#fff'; mmx.strokeStyle='#06121f'; mmx.lineWidth=2;
+  mmx.beginPath(); mmx.moveTo(0,-10); mmx.lineTo(7,9); mmx.lineTo(0,5); mmx.lineTo(-7,9); mmx.closePath();
+  mmx.fill(); mmx.stroke();
+  mmx.restore();
+
+  mmx.restore();
+  mmx.beginPath(); mmx.arc(cx,cy,R-2,0,7);
+  mmx.strokeStyle='rgba(154,230,255,0.9)'; mmx.lineWidth=3; mmx.stroke();
+
+  mmx.fillStyle='#eef5ff'; mmx.font='bold 18px monospace'; mmx.textAlign='left';
+  mmx.fillText(`${ringsCleared}/${RING_N}`, 12, 26);
+}
+
+// Inputs
+addEventListener('keydown',e=>{
+  keys[e.code]=1;
+  if(e.code==='KeyC')camNext();
+  if(e.code==='KeyR')reset();
+  if(e.code==='Digit1'){mode=0;camLbl();}
+  if(e.code==='Digit2'){mode=1;camLbl();}
+  if(e.code==='Digit3'){mode=2;camLbl();}
+  if(e.code.startsWith('Arrow')||e.code==='Space')e.preventDefault();
+});
+addEventListener('keyup',e=>keys[e.code]=0);
+
+function camLbl(){ $('cam').textContent=['FPV','Chase','Ground'][mode]; plane.visible=mode!==0; }
+function camNext(){ mode=(mode+1)%3; camLbl(); }
+
+$('bC').onclick=camNext;
+$('bR').onclick=reset;
+$('bK').onclick=()=>{if(raw)cal={...raw};};
+$('bI').onclick=e=>{invert=!invert; e.target.classList.toggle('on',invert);};
+$('bA').onclick=e=>{assist=!assist; e.target.classList.toggle('on',assist);};
+$('bF').onclick=()=>{const d=document.documentElement; (d.requestFullscreen||d.webkitRequestFullscreen||(()=>{})).call(d);};
+
+const th=$('thr');
+function setThr(e){ const b=th.getBoundingClientRect(); thr=clamp(1-(e.clientY-b.top)/b.height,0,1); }
+th.addEventListener('pointerdown',e=>{ th.setPointerCapture(e.pointerId); setThr(e); });
+th.addEventListener('pointermove',e=>{ if(th.hasPointerCapture(e.pointerId))setThr(e); });
+
+// Screen drag control
 const rc=$('r');
 let dragTouchId=null;
 function onDragStart(e){
- if(!dragMode||!started)return;
- // only one drag pointer at a time
- if(dragTouchId!==null)return;
- // ignore drags that start on the throttle slider or top bar / buttons
- for(const id of ['thr','tr','tl','bar','msg']){
-   const el=$(id); if(el && el.contains(e.target)) return;
- }
- dragTouchId=e.pointerId;
- dragActive=true;dragStartX=e.clientX;dragStartY=e.clientY;dragCurX=e.clientX;dragCurY=e.clientY;
- dragRoll=0;dragPitch=0;
- rc.setPointerCapture(e.pointerId);
- e.preventDefault();
+  if(!dragMode||!started||dragTouchId!==null) return;
+  for(const id of ['thr','tr','tl','bar','msg','mm']){
+    const el=$(id); if(el && el.contains(e.target)) return;
+  }
+  dragTouchId=e.pointerId;
+  dragActive=true; dragStartX=e.clientX; dragStartY=e.clientY; dragCurX=e.clientX; dragCurY=e.clientY;
+  dragRoll=0; dragPitch=0;
+  rc.setPointerCapture(e.pointerId);
+  e.preventDefault();
 }
 function onDragMove(e){
- if(!dragActive||e.pointerId!==dragTouchId)return;
- dragCurX=e.clientX;dragCurY=e.clientY;
- // Map screen drag to normalized -1..1
- const dx=(dragCurX-dragStartX)/ (innerWidth*0.35);
- const dy=(dragCurY-dragStartY)/ (innerHeight*0.35);
- dragRoll=clamp(dx);
- dragPitch=clamp(dy);
- e.preventDefault();
+  if(!dragActive||e.pointerId!==dragTouchId) return;
+  dragCurX=e.clientX; dragCurY=e.clientY;
+  dragRoll=clamp((dragCurX-dragStartX)/(innerWidth*0.35));
+  dragPitch=clamp((dragCurY-dragStartY)/(innerHeight*0.35));
+  e.preventDefault();
 }
 function onDragEnd(e){
- if(e.pointerId!==dragTouchId)return;
- dragActive=false;dragTouchId=null;
- dragRoll=0;dragPitch=0;
+  if(e.pointerId!==dragTouchId) return;
+  dragActive=false; dragTouchId=null; dragRoll=0; dragPitch=0;
 }
 rc.addEventListener('pointerdown',onDragStart,{passive:false});
 rc.addEventListener('pointermove',onDragMove,{passive:false});
 rc.addEventListener('pointerup',onDragEnd);
 rc.addEventListener('pointercancel',onDragEnd);
 
-function onOri(e){if(e.beta==null||e.gamma==null)return;
- const a=((((screen.orientation&&screen.orientation.angle)??window.orientation??0)%360)+360)%360,b=e.beta,g=e.gamma;let rl,pt;
- if(a===0){rl=g;pt=b;}else if(a===90){rl=b;pt=-g;}else if(a===270){rl=-b;pt=g;}else{rl=-g;pt=-b;}
- raw={rl,pt};if(!cal)cal={...raw};clearTimeout(tiltTimer);}
+function onOri(e){
+  if(e.beta==null||e.gamma==null) return;
+  const a=((((screen.orientation&&screen.orientation.angle)??window.orientation??0)%360)+360)%360, b=e.beta, g=e.gamma;
+  let rl, pt;
+  if(a===0){rl=g;pt=b;}else if(a===90){rl=b;pt=-g;}else if(a===270){rl=-b;pt=g;}else{rl=-g;pt=-b;}
+  raw={rl,pt}; if(!cal)cal={...raw}; clearTimeout(tiltTimer);
+}
 
 async function begin(useTilt,useDrag){
- // disable all input modes first
- tilt=false;dragMode=false;
- if(useTilt){
-  try{if(window.DeviceOrientationEvent&&typeof DeviceOrientationEvent.requestPermission==='function'){const s=await DeviceOrientationEvent.requestPermission();if(s!=='granted'){$('note').textContent='Tilt permission was denied. Starting with screen drag instead.';useTilt=false;useDrag=true;}}}catch(err){useTilt=false;useDrag=true;}
-  if(useTilt){addEventListener('deviceorientation',onOri);tilt=true;
-   tiltTimer=setTimeout(()=>{msg('No tilt sensor detected. Use screen drag or keyboard instead.');setTimeout(()=>msg(''),5000);},2500);}
- }
- if(useDrag){
-  dragMode=true;
-  // clear any active drag state
-  dragActive=false;dragTouchId=null;dragRoll=0;dragPitch=0;
- }
- $('ctl').textContent=tilt?'TILT':(dragMode?'TOUCH':'KEYS');
- $('start').style.display='none';started=true;
+  tilt=false; dragMode=false;
+  if(useTilt){
+    try{
+      if(window.DeviceOrientationEvent&&typeof DeviceOrientationEvent.requestPermission==='function'){
+        const s=await DeviceOrientationEvent.requestPermission();
+        if(s!=='granted'){ $('note').textContent='Tilt permission denied. Switched to touch drag.'; useTilt=false; useDrag=true; }
+      }
+    }catch(err){ useTilt=false; useDrag=true; }
+    if(useTilt){
+      addEventListener('deviceorientation',onOri); tilt=true;
+      tiltTimer=setTimeout(()=>{ msg('No tilt sensor detected. Use touch or keyboard.'); setTimeout(()=>msg(''),5000); },2500);
+    }
+  }
+  if(useDrag){ dragMode=true; dragActive=false; dragTouchId=null; dragRoll=0; dragPitch=0; }
+  $('ctl').textContent=tilt?'TILT':(dragMode?'TOUCH':'KEYS');
+  $('start').style.display='none'; started=true;
 }
 $('sT').onclick=()=>begin(true,false);
 $('sS').onclick=()=>begin(false,true);
 $('sK').onclick=()=>begin(false,false);
 
-// flight loop
-const dq=new Q(),f=new V3(),u=new V3(),r=new V3(),tmp=new V3();
-let last=performance.now(),crashT=0,camPos=new V3(),spin=0;
+// Flight loop
+const dq=new Q(), f=new V3(), u=new V3(), r=new V3(), tmp=new V3();
+let last=performance.now(), crashT=0, camPos=new V3(), spin=0;
+const prevP = new V3();
+
 function step(dt){
- f.set(0,0,-1).applyQuaternion(q);u.set(0,1,0).applyQuaternion(q);r.set(1,0,0).applyQuaternion(q);
- let kr=(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0),kp=(keys.ArrowDown?1:0)-(keys.ArrowUp?1:0),ky=(keys.KeyD?1:0)-(keys.KeyA?1:0);
- thr=clamp(thr+((keys.KeyW||keys.ShiftLeft?1:0)-(keys.KeyS||keys.ControlLeft?1:0))*.5*dt,0,1);
- if(tilt&&raw&&cal){const dz=x=>Math.abs(x)<.07?0:x;
-  const tr=dz(clamp((raw.rl-cal.rl)/25)),tp=dz(clamp((raw.pt-cal.pt)/20))*(invert?-1:1);
-  const k=clamp(dt*10,0,1);tRoll+=(tr-tRoll)*k;tPitch+=(tp-tPitch)*k;kr+=tRoll;kp+=tPitch;}
- // screen drag input
- if(dragMode && dragActive){
-   // dragRoll positive = drag right -> roll right (positive kr)
-   // dragPitch positive = drag down -> nose down (positive kp since ArrowDown is nose down? wait, in original kp = ArrowDown - ArrowUp, so down is positive kp which causes pitch up? let's check original: kp*(1.1*dt) around X axis. X axis positive rotation is nose down? In three.js, positive rotation around X tilts forward (nose down). So kp positive -> nose down. But ArrowDown gives kp=+1, so pressing down arrow should nose down. Original comment says "up arrow = nose down". Wait, they said up arrow = nose down? In original: kp = ArrowDown?1:0 - ArrowUp?1:0. So ArrowDown gives +1, ArrowUp gives -1. Then q.multiply(dq.setFromAxisAngle(X, kp*1.1*dt)). Positive rotation around X is pitch up? Actually, in three.js, rotating around X by positive angle pitches the nose up? Let's think: forward is -Z, up is +Y. Rotation around X by +90deg maps Y to Z, so up goes to forward, meaning nose goes down? Wait, we need to verify. Actually, standard: in three.js, positive rotation around X axis is counter-clockwise when looking from +X. Looking from +X, forward -Z is to the left, up +Y is up. Positive rotation rotates -Z towards -Y? Let's not overthink; the original works, so we'll keep consistent. We'll set dragPitch to map drag down -> nose down. In original, ArrowDown gives kp=+1 which presumably noses down (as per comment "up arrow = nose down", wait comment says "up arrow = nose down" so ArrowUp would nose down? But ArrowUp gives kp=-1. Contradiction? Actually comment: "arrows = roll and pitch (up arrow = nose down)". That means pressing up arrow makes nose go down. But ArrowUp gives kp=-1. So negative kp must cause nose down? Let's check: q.multiply(dq.setFromAxisAngle(X, kp*1.1*dt)). If kp is negative, rotation around X is negative angle. In three.js, a negative rotation around X tilts the nose down? Let's test mentally: start identity, forward -Z, up +Y. Rotate around X by -90deg: Y goes to -Z? Actually rotation matrix for angle θ around X: Y' = Y cosθ - Z sinθ, Z' = Y sinθ + Z cosθ. For θ=-90: cos=0, sin=-1. Y' = -Z*(-1)=Z? Hmm, let's use small angle: θ negative, Y' ≈ Y - θ*Z? Actually for small θ, Y' ≈ Y - θ Z, Z' ≈ θ Y + Z. Forward is -Z, so new forward = -Z' ≈ -θ Y - Z. So negative θ gives forward with +θ Y component? That's up. So negative kp gives pitch up? That would mean ArrowUp (kp=-1) gives pitch up, not nose down. Contradiction with comment. Let's not break original; we just want drag down to feel like nose down. In original, ArrowDown (kp=+1) probably noses down. So drag down (positive dy) should set kp positive. We'll set dragPitch = clamp(dy) where dy positive = drag down, so kp += dragPitch. That will nose down if original ArrowDown noses down. Good.
-   kr += dragRoll;
-   kp += dragPitch;
- }
- kr=clamp(kr);kp=clamp(kp);ky=clamp(ky);
- const spdF=v.dot(f);
- q.multiply(dq.setFromAxisAngle(X,kp*1.1*dt));
- if(kr!==0||!assist)q.multiply(dq.setFromAxisAngle(Z,-kr*2.4*dt));else if(Math.abs(kr)<.05)q.multiply(dq.setFromAxisAngle(Z,-r.y*2*dt));
- q.multiply(dq.setFromAxisAngle(Y,-ky*.5*dt));
- q.premultiply(dq.setFromAxisAngle(Y,r.y*.9*dt));
- if(spdF<15)q.multiply(dq.setFromAxisAngle(X,-(15-clamp(spdF,0,15))*.04*dt));
- q.normalize();
- f.set(0,0,-1).applyQuaternion(q);u.set(0,1,0).applyQuaternion(q);
- const te=bat>0?thr:0;bat=Math.max(0,bat-thr*dt*.12);
- const s=Math.max(0,v.dot(f)),lift=10*Math.min(1,s*s/361);
- tmp.copy(f).multiplyScalar(te*16).addScaledVector(u,lift).addScaledVector(v,-v.length()*.0085);tmp.y-=9.8;
- v.addScaledVector(tmp,dt);
- const along=v.dot(f);tmp.copy(v).addScaledVector(f,-along).multiplyScalar(Math.exp(-2.2*dt));v.copy(f).multiplyScalar(along).add(tmp);
- p.addScaledVector(v,dt);spin=te;
- const onRw=Math.abs(p.x)<15&&Math.abs(p.z)<450,gh=hgt(p.x,p.z)+(onRw?.3:0);
- if(p.y-gh<=1){const vs=v.y;
-  if(vs>-4.5&&v.length()<32&&u.y>.8){state='landed';p.y=gh+1;v.y=0;msg(`Landed ${onRw?'on the runway':'in the field'}! Touchdown ${vs.toFixed(1)} m/s`);}
-  else{state='crashed';crashT=3;msg('Crashed. Restarting…');}}
- if(Math.hypot(p.x,p.z)>4200){reset();}
+  prevP.copy(p);
+  f.set(0,0,-1).applyQuaternion(q); u.set(0,1,0).applyQuaternion(q); r.set(1,0,0).applyQuaternion(q);
+
+  let kr=(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0);
+  let kp=(keys.ArrowDown?1:0)-(keys.ArrowUp?1:0);
+  let ky=(keys.KeyD?1:0)-(keys.KeyA?1:0);
+
+  thr=clamp(thr+((keys.KeyW||keys.ShiftLeft?1:0)-(keys.KeyS||keys.ControlLeft?1:0))*.5*dt,0,1);
+
+  if(tilt&&raw&&cal){
+    const dz=x=>Math.abs(x)<.07?0:x;
+    const tr=dz(clamp((raw.rl-cal.rl)/25)), tp=dz(clamp((raw.pt-cal.pt)/20))*(invert?-1:1);
+    const k=clamp(dt*10,0,1); tRoll+=(tr-tRoll)*k; tPitch+=(tp-tPitch)*k;
+    kr+=tRoll; kp+=tPitch;
+  }
+  if(dragMode && dragActive){ kr += dragRoll; kp += dragPitch; }
+
+  kr=clamp(kr); kp=clamp(kp); ky=clamp(ky);
+  const spdF=v.dot(f);
+
+  q.multiply(dq.setFromAxisAngle(X,kp*1.1*dt));
+  if(kr!==0||!assist) q.multiply(dq.setFromAxisAngle(Z,-kr*2.4*dt));
+  else if(Math.abs(kr)<.05) q.multiply(dq.setFromAxisAngle(Z,-r.y*2*dt));
+  q.multiply(dq.setFromAxisAngle(Y,-ky*.5*dt));
+  q.premultiply(dq.setFromAxisAngle(Y,r.y*.9*dt));
+
+  if(spdF<15) q.multiply(dq.setFromAxisAngle(X,-(15-clamp(spdF,0,15))*.04*dt));
+  q.normalize();
+
+  f.set(0,0,-1).applyQuaternion(q); u.set(0,1,0).applyQuaternion(q);
+
+  const te=bat>0?thr:0; bat=Math.max(0,bat-thr*dt*.12);
+  const s=Math.max(0,v.dot(f)), lift=10*Math.min(1,s*s/361);
+
+  tmp.copy(f).multiplyScalar(te*16).addScaledVector(u,lift).addScaledVector(v,-v.length()*.0085);
+  tmp.y-=9.8;
+  v.addScaledVector(tmp,dt);
+
+  const along=v.dot(f);
+  tmp.copy(v).addScaledVector(f,-along).multiplyScalar(Math.exp(-2.2*dt));
+  v.copy(f).multiplyScalar(along).add(tmp);
+
+  p.addScaledVector(v,dt); spin=te;
+
+  checkRings(prevP, p);
+
+  const onRw=Math.abs(p.x)<15&&Math.abs(p.z)<450;
+  const gh=hgt(p.x,p.z)+(onRw?.3:0);
+
+  if(p.y-gh<=1){
+    const vs=v.y;
+    const canLand = ringsUnlockedLanding;
+    const softLand = vs>-4.5 && v.length()<32 && u.y>.8;
+
+    if(softLand && canLand && onRw){
+      state='landed'; p.y=gh+1; v.y=0;
+      msg(`Landed on the runway! Touchdown at ${vs.toFixed(1)} m/s.`);
+    } else if(softLand && !onRw){
+      state='crashed'; crashT=2;
+      msg(ringsUnlockedLanding ? 'Off the runway — touch down on the grey airstrip!' : 'You must clear all 10 rings before landing!');
+    } else if(softLand && onRw && !canLand){
+      state='crashed'; crashT=2;
+      msg(`Landing locked! Clear all 10 rings first (${ringsCleared}/${RING_N}).`);
+    } else {
+      state='crashed'; crashT=3; msg('Crashed. Restarting…');
+    }
+  }
+
+  if(Math.hypot(p.x,p.z)>4200){ reset(); }
 }
+
 function frame(now){
- const dt=Math.min(.05,(now-last)/1000);last=now;
- if(started){
-  if(state==='fly')step(dt);
-  else if(state==='landed'){v.multiplyScalar(Math.exp(-.7*dt));p.addScaledVector(v,dt);p.y=hgt(p.x,p.z)+1.3;spin=0;}
-  else if(state==='crashed'){spin=0;crashT-=dt;if(crashT<=0)reset();}
- }
- f.set(0,0,-1).applyQuaternion(q);u.set(0,1,0).applyQuaternion(q);r.set(1,0,0).applyQuaternion(q);
- plane.position.copy(p);plane.quaternion.copy(q);prop.rotation.z+=spin*60*dt;
- if(mode===0){cam.position.copy(p);cam.quaternion.copy(q);}
- else if(mode===1){tmp.copy(p).addScaledVector(f,-14).addScaledVector(u,4);camPos.lerp(tmp,1-Math.exp(-6*dt));cam.position.copy(camPos);cam.up.set(0,1,0);cam.lookAt(tmp.copy(p).addScaledVector(f,10));}
- else{cam.position.set(40,6,350);cam.up.set(0,1,0);cam.lookAt(p);}
- renderer.render(scene,cam);
- const hdg=(Math.atan2(f.x,-f.z)*57.3+360)%360,gh=hgt(p.x,p.z),agl=Math.max(0,p.y-gh-1),spd=v.length();
- drawHud(f,r,u,hdg,spd,agl);
- $('sp').textContent=spd.toFixed(1)+' m/s';$('al').textContent=agl.toFixed(0)+' m';$('th').textContent=Math.round(thr*100)+'%';
- $('vs').textContent=v.y.toFixed(1);$('hd').textContent=String(Math.round(hdg)%360).padStart(3,'0')+'°';$('bt').textContent=Math.round(bat)+'%';
- $('fill').style.height=thr*100+'%';$('tv').textContent='THROTTLE '+Math.round(thr*100)+'%';
- requestAnimationFrame(frame);
+  requestAnimationFrame(frame);
+  const dt=Math.min(.05,(now-last)/1000); last=now;
+
+  if(started){
+    if(state==='fly') step(dt);
+    else if(state==='landed'){ v.multiplyScalar(Math.exp(-.7*dt)); p.addScaledVector(v,dt); p.y=hgt(p.x,p.z)+1.3; spin=0; }
+    else if(state==='crashed'){ spin=0; crashT-=dt; if(crashT<=0) reset(); }
+  }
+
+  f.set(0,0,-1).applyQuaternion(q); u.set(0,1,0).applyQuaternion(q); r.set(1,0,0).applyQuaternion(q);
+  plane.position.copy(p); plane.quaternion.copy(q); prop.rotation.z+=spin*60*dt;
+
+  if(mode===0){ cam.position.copy(p); cam.quaternion.copy(q); }
+  else if(mode===1){
+    tmp.copy(p).addScaledVector(f,-14).addScaledVector(u,4);
+    camPos.lerp(tmp,1-Math.exp(-6*dt)); cam.position.copy(camPos); cam.up.set(0,1,0);
+    cam.lookAt(tmp.copy(p).addScaledVector(f,10));
+  } else {
+    cam.position.set(40,6,350); cam.up.set(0,1,0); cam.lookAt(p);
+  }
+
+  renderer.render(scene,cam);
+
+  const hdg=(Math.atan2(f.x,-f.z)*57.3+360)%360;
+  const gh=hgt(p.x,p.z);
+  const spd=v.length();
+  const agl=Math.max(0,p.y-gh);
+
+  $('sp').textContent=spd.toFixed(1);
+  $('al').textContent=agl.toFixed(0);
+  $('th').textContent=Math.round(thr*100)+'%';
+  $('fill').style.height=Math.round(thr*100)+'%';
+  $('tv').textContent=`THROTTLE ${Math.round(thr*100)}%`;
+  $('vs').textContent=(v.y>0?'+':'')+v.y.toFixed(1);
+  $('hd').textContent=String(Math.round(hdg)%360).padStart(3,'0')+'°';
+  $('rg').textContent=`${ringsCleared}/${RING_N}`;
+  $('bt').textContent=Math.round(bat)+'%';
+
+  drawHud(f,r,u,hdg,spd,agl);
+  drawMiniMap();
 }
-camLbl();requestAnimationFrame(frame);
-</script></body></html>
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
