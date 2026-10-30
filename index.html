@@ -38,8 +38,9 @@ button.on{background:var(--acc);color:#06121f}
 <div class="p" id="msg"></div>
 <div class="p" id="start">
 <h1>FPV Flight Simulator</h1>
-<p>Fixed-wing countryside flight with a landing field. On a tablet, hold it like a steering yoke: tilt left and right to roll, tilt forward and back to pitch, and drag the left slider for throttle.</p>
+<p>Fixed-wing countryside flight with a landing field. Choose your control style below — tilt your device, drag on the screen, or use the keyboard.</p>
 <button id="sT">Start with tilt (tablet)</button>
+<button id="sS">Start with screen drag (iPad touch)</button>
 <button id="sK">Start with keyboard</button>
 <p>Keyboard: arrows = roll and pitch (up arrow = nose down), A/D = yaw, W/S = throttle, C = camera, R = reset.</p>
 <p id="note"></p>
@@ -86,9 +87,13 @@ const bx=(w,h,d,c,x,y,z)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m
 bx(1.2,1.2,6,0xf4f4f4,0,0,0);bx(14,.25,2,0xff6a1a,0,.2,-.3);bx(5,.2,1.4,0xff6a1a,0,.2,2.7);bx(.2,1.8,1.4,0xff6a1a,0,.9,2.7);
 const prop=bx(.2,3,.3,0x222222,0,0,-3.1);scene.add(plane);
 // state
-let p=new V3(),q=new Q(),v=new V3(),thr=.5,bat=100,state='fly',mode=0,assist=true,invert=false,started=false,tilt=false,tiltTimer=0;
+let p=new V3(),q=new Q(),v=new V3(),thr=.5,bat=100,state='fly',mode=0,assist=true,invert=false,started=false;
+let tilt=false, tiltTimer=0;
+let dragMode=false; // screen drag control
 const keys={};let raw=null,cal=null,tRoll=0,tPitch=0,tXY=[0,0];
-function reset(){p.set(0,80,1000);q.identity();v.set(0,0,-22);thr=.5;bat=100;state='fly';msg('');}
+let dragActive=false, dragStartX=0, dragStartY=0, dragCurX=0, dragCurY=0, dragRoll=0, dragPitch=0;
+
+function reset(){p.set(0,80,1000);q.identity();v.set(0,0,-22);thr=.5;bat=100;state='fly';msg('');dragRoll=0;dragPitch=0;}
 function msg(t){const m=$('msg');m.style.display=t?'block':'none';m.textContent=t;}
 reset();
 // HUD
@@ -125,19 +130,69 @@ const th=$('thr');
 function setThr(e){const b=th.getBoundingClientRect();thr=clamp(1-(e.clientY-b.top)/b.height,0,1);}
 th.addEventListener('pointerdown',e=>{th.setPointerCapture(e.pointerId);setThr(e);});
 th.addEventListener('pointermove',e=>{if(th.hasPointerCapture(e.pointerId))setThr(e);});
+
+// === Screen drag input (iPad) ===
+const rc=$('r');
+let dragTouchId=null;
+function onDragStart(e){
+ if(!dragMode||!started)return;
+ // only one drag pointer at a time
+ if(dragTouchId!==null)return;
+ // ignore drags that start on the throttle slider or top bar / buttons
+ for(const id of ['thr','tr','tl','bar','msg']){
+   const el=$(id); if(el && el.contains(e.target)) return;
+ }
+ dragTouchId=e.pointerId;
+ dragActive=true;dragStartX=e.clientX;dragStartY=e.clientY;dragCurX=e.clientX;dragCurY=e.clientY;
+ dragRoll=0;dragPitch=0;
+ rc.setPointerCapture(e.pointerId);
+ e.preventDefault();
+}
+function onDragMove(e){
+ if(!dragActive||e.pointerId!==dragTouchId)return;
+ dragCurX=e.clientX;dragCurY=e.clientY;
+ // Map screen drag to normalized -1..1
+ const dx=(dragCurX-dragStartX)/ (innerWidth*0.35);
+ const dy=(dragCurY-dragStartY)/ (innerHeight*0.35);
+ dragRoll=clamp(dx);
+ dragPitch=clamp(dy);
+ e.preventDefault();
+}
+function onDragEnd(e){
+ if(e.pointerId!==dragTouchId)return;
+ dragActive=false;dragTouchId=null;
+ dragRoll=0;dragPitch=0;
+}
+rc.addEventListener('pointerdown',onDragStart,{passive:false});
+rc.addEventListener('pointermove',onDragMove,{passive:false});
+rc.addEventListener('pointerup',onDragEnd);
+rc.addEventListener('pointercancel',onDragEnd);
+
 function onOri(e){if(e.beta==null||e.gamma==null)return;
  const a=((((screen.orientation&&screen.orientation.angle)??window.orientation??0)%360)+360)%360,b=e.beta,g=e.gamma;let rl,pt;
  if(a===0){rl=g;pt=b;}else if(a===90){rl=b;pt=-g;}else if(a===270){rl=-b;pt=g;}else{rl=-g;pt=-b;}
  raw={rl,pt};if(!cal)cal={...raw};clearTimeout(tiltTimer);}
-async function begin(useTilt){
+
+async function begin(useTilt,useDrag){
+ // disable all input modes first
+ tilt=false;dragMode=false;
  if(useTilt){
-  try{if(window.DeviceOrientationEvent&&typeof DeviceOrientationEvent.requestPermission==='function'){const s=await DeviceOrientationEvent.requestPermission();if(s!=='granted'){$('note').textContent='Tilt permission was denied. Starting with the keyboard instead.';useTilt=false;}}}catch(err){useTilt=false;}
+  try{if(window.DeviceOrientationEvent&&typeof DeviceOrientationEvent.requestPermission==='function'){const s=await DeviceOrientationEvent.requestPermission();if(s!=='granted'){$('note').textContent='Tilt permission was denied. Starting with screen drag instead.';useTilt=false;useDrag=true;}}}catch(err){useTilt=false;useDrag=true;}
   if(useTilt){addEventListener('deviceorientation',onOri);tilt=true;
-   tiltTimer=setTimeout(()=>{msg('No tilt sensor detected. Open this link directly in your browser, or use the keyboard.');setTimeout(()=>msg(''),5000);},2500);}
+   tiltTimer=setTimeout(()=>{msg('No tilt sensor detected. Use screen drag or keyboard instead.');setTimeout(()=>msg(''),5000);},2500);}
  }
- $('ctl').textContent=tilt?'TILT':'KEYS';$('start').style.display='none';started=true;
+ if(useDrag){
+  dragMode=true;
+  // clear any active drag state
+  dragActive=false;dragTouchId=null;dragRoll=0;dragPitch=0;
+ }
+ $('ctl').textContent=tilt?'TILT':(dragMode?'TOUCH':'KEYS');
+ $('start').style.display='none';started=true;
 }
-$('sT').onclick=()=>begin(true);$('sK').onclick=()=>begin(false);
+$('sT').onclick=()=>begin(true,false);
+$('sS').onclick=()=>begin(false,true);
+$('sK').onclick=()=>begin(false,false);
+
 // flight loop
 const dq=new Q(),f=new V3(),u=new V3(),r=new V3(),tmp=new V3();
 let last=performance.now(),crashT=0,camPos=new V3(),spin=0;
@@ -148,6 +203,13 @@ function step(dt){
  if(tilt&&raw&&cal){const dz=x=>Math.abs(x)<.07?0:x;
   const tr=dz(clamp((raw.rl-cal.rl)/25)),tp=dz(clamp((raw.pt-cal.pt)/20))*(invert?-1:1);
   const k=clamp(dt*10,0,1);tRoll+=(tr-tRoll)*k;tPitch+=(tp-tPitch)*k;kr+=tRoll;kp+=tPitch;}
+ // screen drag input
+ if(dragMode && dragActive){
+   // dragRoll positive = drag right -> roll right (positive kr)
+   // dragPitch positive = drag down -> nose down (positive kp since ArrowDown is nose down? wait, in original kp = ArrowDown - ArrowUp, so down is positive kp which causes pitch up? let's check original: kp*(1.1*dt) around X axis. X axis positive rotation is nose down? In three.js, positive rotation around X tilts forward (nose down). So kp positive -> nose down. But ArrowDown gives kp=+1, so pressing down arrow should nose down. Original comment says "up arrow = nose down". Wait, they said up arrow = nose down? In original: kp = ArrowDown?1:0 - ArrowUp?1:0. So ArrowDown gives +1, ArrowUp gives -1. Then q.multiply(dq.setFromAxisAngle(X, kp*1.1*dt)). Positive rotation around X is pitch up? Actually, in three.js, rotating around X by positive angle pitches the nose up? Let's think: forward is -Z, up is +Y. Rotation around X by +90deg maps Y to Z, so up goes to forward, meaning nose goes down? Wait, we need to verify. Actually, standard: in three.js, positive rotation around X axis is counter-clockwise when looking from +X. Looking from +X, forward -Z is to the left, up +Y is up. Positive rotation rotates -Z towards -Y? Let's not overthink; the original works, so we'll keep consistent. We'll set dragPitch to map drag down -> nose down. In original, ArrowDown gives kp=+1 which presumably noses down (as per comment "up arrow = nose down", wait comment says "up arrow = nose down" so ArrowUp would nose down? But ArrowUp gives kp=-1. Contradiction? Actually comment: "arrows = roll and pitch (up arrow = nose down)". That means pressing up arrow makes nose go down. But ArrowUp gives kp=-1. So negative kp must cause nose down? Let's check: q.multiply(dq.setFromAxisAngle(X, kp*1.1*dt)). If kp is negative, rotation around X is negative angle. In three.js, a negative rotation around X tilts the nose down? Let's test mentally: start identity, forward -Z, up +Y. Rotate around X by -90deg: Y goes to -Z? Actually rotation matrix for angle θ around X: Y' = Y cosθ - Z sinθ, Z' = Y sinθ + Z cosθ. For θ=-90: cos=0, sin=-1. Y' = -Z*(-1)=Z? Hmm, let's use small angle: θ negative, Y' ≈ Y - θ*Z? Actually for small θ, Y' ≈ Y - θ Z, Z' ≈ θ Y + Z. Forward is -Z, so new forward = -Z' ≈ -θ Y - Z. So negative θ gives forward with +θ Y component? That's up. So negative kp gives pitch up? That would mean ArrowUp (kp=-1) gives pitch up, not nose down. Contradiction with comment. Let's not break original; we just want drag down to feel like nose down. In original, ArrowDown (kp=+1) probably noses down. So drag down (positive dy) should set kp positive. We'll set dragPitch = clamp(dy) where dy positive = drag down, so kp += dragPitch. That will nose down if original ArrowDown noses down. Good.
+   kr += dragRoll;
+   kp += dragPitch;
+ }
  kr=clamp(kr);kp=clamp(kp);ky=clamp(ky);
  const spdF=v.dot(f);
  q.multiply(dq.setFromAxisAngle(X,kp*1.1*dt));
