@@ -46,6 +46,14 @@ button.on{background:var(--acc);color:#06121f}
 #start p{margin:0;max-width:560px;font-weight:500;opacity:.9}
 #start button{font-size:16px;padding:12px 20px;min-width:250px}
 #note{color:var(--warn)}
+#pad,#lpad{width:130px;height:130px;border-radius:18px;border:2px solid rgba(255,255,255,.85);background:rgba(20,24,28,.45)}
+#pad::before,#lpad::before{top:0;bottom:0;background:rgba(255,255,255,.4)}
+#pad::after,#lpad::after{left:0;right:0;background:rgba(255,255,255,.4)}
+#knob,#lknob{width:26px;height:26px;margin:-13px 0 0 -13px;background:#2bff4f;opacity:1;box-shadow:0 0 8px #2bff4f}
+#cp{bottom:calc(env(safe-area-inset-bottom,0px) + 90px);left:50%;transform:translateX(-50%);text-align:center;min-width:190px;background:rgba(20,22,26,.82);border-radius:14px;padding:8px 18px}
+#cp small{font-size:15px;font-weight:500;opacity:.85}
+#kv{font-size:30px}
+#cm{margin-top:2px;font-size:14px;opacity:.9;cursor:pointer;padding:4px 0}
 </style>
 </head>
 <body>
@@ -62,6 +70,7 @@ button.on{background:var(--acc);color:#06121f}
 <div class="p" id="lpad"><div id="lknob"></div></div>
 <div class="p" id="lb" style="display:none"></div>
 <div class="p" id="bar"></div>
+<div class="p" id="cp"><div><b id="kv">0</b> <small>km/h</small></div><div id="cm">Cam <b id="ca">0°</b></div></div>
 <div class="p" id="msg"></div>
 <div class="p" id="start">
   <h1>SBS RANGSIT FPV Simulator</h1>
@@ -289,7 +298,7 @@ function drawHud(f,r,u,hdg,spd,agl){
   hx.save(); hx.translate(W/2,H/2); hx.rotate(-bank);
   hx.strokeStyle='rgba(255,255,255,.9)'; hx.fillStyle='#fff'; hx.lineWidth=2*dpr; hx.font=`${12*dpr}px monospace`;
   for(let a=-30;a<=30;a+=10){
-    const y=(pitch-a)*px; if(Math.abs(y)>H) continue;
+    const y=(pitch+camDeg-a)*px; if(Math.abs(y)>H) continue;
     hx.setLineDash(a<0?[8*dpr,6*dpr]:[]); hx.beginPath();
     if(a===0){ hx.moveTo(-W*.4,y); hx.lineTo(-W*.07,y); hx.moveTo(W*.07,y); hx.lineTo(W*.4,y); }
     else {
@@ -381,7 +390,7 @@ pad.addEventListener('pointerup',padEnd); pad.addEventListener('pointercancel',p
 });
 
 // ==== Left stick: throttle (Y, holds) + yaw (X, springs) ====
-let lYaw=0, pilotName='Pilot';
+let lYaw=0, dispYaw=0, pilotName='Pilot';
 try{$('pname').value=localStorage.getItem('sbsName')||''}catch(e){}
 const lp=$('lpad');
 function setL(e){ const b=lp.getBoundingClientRect(), R=b.width/2; lYaw=clamp((e.clientX-(b.left+R))/(R-10)); thr=clamp(1-(e.clientY-b.top-10)/(b.height-20),0,1); }
@@ -441,6 +450,8 @@ function updateAudio(){
 }
 $('bS').onclick=e=>{ soundOn=!soundOn; e.target.classList.toggle('on',soundOn); };
 
+let camDeg=0; const tq=new Q();
+$('cm').onclick=()=>{ camDeg=(camDeg+10)%50; };
 const rc=$('r');
 let dragTouchId=null;
 function onDragStart(e){
@@ -514,7 +525,7 @@ function step(dt){
   }
   if(dragMode&&dragActive){ kr+=dragRoll; kp+=dragPitch; }
   kr=clamp(kr); kp=clamp(kp); ky=clamp(ky);
-  dispRoll=kr; dispPitch=kp;
+  dispRoll=kr; dispPitch=kp; dispYaw=ky;
   const spdF=v.dot(f);
   q.multiply(dq.setFromAxisAngle(X,kp*1.1*dt));
   if(kr!==0||!assist) q.multiply(dq.setFromAxisAngle(Z,-kr*2.4*dt));
@@ -561,7 +572,7 @@ function frame(now){
   }
   f.set(0,0,-1).applyQuaternion(q); u.set(0,1,0).applyQuaternion(q); r.set(1,0,0).applyQuaternion(q);
   plane.position.copy(p); plane.quaternion.copy(q); prop.rotation.z+=spin*60*dt;
-  if(mode===0){ cam.position.copy(p); cam.quaternion.copy(q); }
+  if(mode===0){ cam.position.copy(p); cam.quaternion.copy(q).multiply(tq.setFromAxisAngle(X,camDeg*Math.PI/180)); }
   else if(mode===1){
     tmp.copy(p).addScaledVector(f,-14).addScaledVector(u,4);
     camPos.lerp(tmp,1-Math.exp(-6*dt)); cam.position.copy(camPos); cam.up.set(0,1,0);
@@ -582,8 +593,9 @@ function frame(now){
   $('knob').style.transform=`translate(${dispRoll*47}px,${dispPitch*47}px)`;
   drawHud(f,r,u,hdg,spd,agl);
   drawMiniMap();
-  $('lknob').style.transform=`translate(${lYaw*47}px,${(1-2*thr)*47}px)`;
+  $('lknob').style.transform=`translate(${dispYaw*47}px,${(1-2*thr)*47}px)`;
   updateAudio();
+  $('kv').textContent=Math.round(spd*3.6); $('ca').textContent=camDeg+'°';
 }
 requestAnimationFrame(frame);
 </script>
