@@ -46,6 +46,8 @@ button.on{background:var(--acc);color:#06121f}
 #start p{margin:0;max-width:560px;font-weight:500;opacity:.9}
 #start button{font-size:16px;padding:12px 20px;min-width:250px}
 #note{color:var(--warn)}
+.sel{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+#start .sel button{min-width:0;font-size:14px;padding:9px 16px}
 #pad,#lpad{width:130px;height:130px;border-radius:18px;border:2px solid rgba(255,255,255,.85);background:rgba(20,24,28,.45)}
 #pad::before,#lpad::before{top:0;bottom:0;background:rgba(255,255,255,.4)}
 #pad::after,#lpad::after{left:0;right:0;background:rgba(255,255,255,.4)}
@@ -62,7 +64,7 @@ button.on{background:var(--acc);color:#06121f}
 <div class="p" id="tl"><span id="cam">FPV</span> · <span id="ctl">KEYS</span></div>
 <div class="p" id="mm"><canvas id="mmc" width="260" height="260"></canvas></div>
 <div id="tr" class="p">
-  <button id="bC">Camera</button><button id="bR">Reset</button><button id="bK">Calibrate</button><button id="bI">Invert pitch</button><button id="bA" class="on">Assist</button><button id="bL">Leaderboard</button><button id="bS" class="on">Sound</button><button id="bF">Fullscreen</button>
+  <button id="bC">Camera</button><button id="bR">Reset</button><button id="bK">Calibrate</button><button id="bI">Invert pitch</button><button id="bA" class="on">Assist</button><button id="bP">Pause</button><button id="bL">Leaderboard</button><button id="bS" class="on">Sound</button><button id="bF">Fullscreen</button>
 </div>
 <div class="p" id="thr" style="display:none"><div id="fill"></div><div id="tv">THROTTLE 50%</div></div>
 <div class="p" id="pad"><div id="knob"></div></div>
@@ -75,6 +77,8 @@ button.on{background:var(--acc);color:#06121f}
 <div class="p" id="start">
   <h1>SBS RANGSIT FPV Simulator</h1>
   <p>Fly through <b>all 10 branded rings</b> as fast as you can — only then can you land safely on the runway. Your total flight time will be tracked!</p>
+  <div class="sel" id="selD"><button data-v="easy">Easy</button><button data-v="normal" class="on">Normal</button><button data-v="hard">Hard</button></div>
+  <div class="sel" id="selT"><button data-v="morning" class="on">Morning</button><button data-v="afternoon">Afternoon</button><button data-v="night">Night</button></div>
   <input id="pname" placeholder="Pilot name" maxlength="16">
   <button id="sT">Start with tilt (tablet)</button>
   <button id="sS">Start with screen drag (iPad touch)</button>
@@ -93,7 +97,7 @@ const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x8cb8e6);
 scene.fog=new THREE.Fog(0x8cb8e6,500,3800);
 const cam=new THREE.PerspectiveCamera(70,1,.5,7000);
-scene.add(new THREE.HemisphereLight(0xcfe6ff,0x4a5a2a,.95));
+const hemi=new THREE.HemisphereLight(0xcfe6ff,0x4a5a2a,.95); scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xfff2d0,.85);
 sun.position.set(300,500,200); scene.add(sun);
 
@@ -139,7 +143,7 @@ for(let i=0;i<17;i++){ const d=new THREE.Mesh(dg,dm); d.position.set(0,.16,-400+
   scene.add(tm);
 }
 {
-  const cm=new THREE.MeshBasicMaterial({color:0xffffff,fog:false,transparent:true,opacity:.9});
+  const cm=new THREE.MeshBasicMaterial({color:0xffffff,fog:false,transparent:true,opacity:.9}); window.cloudMat=cm;
   for(let i=0;i<24;i++){
     const c=new THREE.Mesh(new THREE.SphereGeometry(1,8,6),cm);
     c.scale.set(120+Math.random()*120,25,70+Math.random()*60);
@@ -185,12 +189,44 @@ scene.add(plane);
   tower(-140,300,24,46,4); tower(-100,350,20,38,-3); tower(-190,350,22,32,3);
 }
 
+// ==== CAMPUS EXTRAS ====
+{
+  const M=c=>new THREE.MeshLambertMaterial({color:c});
+  const add=(g,m,x,y,z)=>{ const o=new THREE.Mesh(g,m); o.position.set(x,y,z); scene.add(o); return o; };
+  const tex=(w,h,fn)=>{ const c=document.createElement('canvas'); c.width=w; c.height=h; fn(c.getContext('2d'),w,h); return new THREE.CanvasTexture(c); };
+  // trees around the towers
+  const tc=[[-140,300],[-100,350],[-190,350]], N=70, tm=new THREE.InstancedMesh(new THREE.ConeGeometry(4,15,6).translate(0,7.5,0),M(0x2f6a2a),N), m4=new THREE.Matrix4(); let n=0;
+  while(n<N){ const x=-140+(Math.random()-.5)*190, z=330+(Math.random()-.5)*130; if(x>-30||tc.some(c=>Math.hypot(x-c[0],z-c[1])<36)) continue; const k=.8+Math.random()*.9; m4.makeScale(k,k,k).setPosition(x,hgt(x,z),z); tm.setMatrixAt(n++,m4); }
+  scene.add(tm);
+  // gate
+  const gp=M(0xe8e8e8); add(new THREE.BoxGeometry(4,16,4),gp,55,8,470); add(new THREE.BoxGeometry(4,16,4),gp,95,8,470);
+  const gs=tex(512,64,(c,w,h)=>{ c.fillStyle='#081428'; c.fillRect(0,0,w,h); c.strokeStyle='#00d2ff'; c.lineWidth=6; c.strokeRect(3,3,w-6,h-6); c.fillStyle='#fff'; c.font='bold 40px sans-serif'; c.textAlign='center'; c.fillText('SBS RANGSIT',w/2,46); });
+  add(new THREE.PlaneGeometry(44,6),new THREE.MeshBasicMaterial({map:gs}),75,17,472.1);
+  add(new THREE.BoxGeometry(44,6,3),M(0x222a38),75,17,470);
+  // flagpole + Thai flag
+  add(new THREE.CylinderGeometry(.4,.4,32,8),M(0xdddddd),-45,16,430);
+  const fl=tex(300,200,(c,w,h)=>{ [['#a51931',0,1],['#f4f5f8',1,1],['#2d2a4a',2,2],['#f4f5f8',4,1],['#a51931',5,1]].forEach(a=>{ c.fillStyle=a[0]; c.fillRect(0,a[1]*h/6,w,a[2]*h/6+1); }); });
+  const fm=add(new THREE.PlaneGeometry(12,8),new THREE.MeshBasicMaterial({map:fl,side:THREE.DoubleSide}),-38.5,27,430); fm.rotation.y=Math.PI/2;
+  // SBS logo on the runway
+  const lg=tex(256,256,(c,w,h)=>{ c.fillStyle='#fff'; c.textAlign='center'; c.font='bold 120px sans-serif'; c.fillText('SBS',w/2,130); c.font='bold 46px sans-serif'; c.fillText('RANGSIT',w/2,190); });
+  const lgm=add(new THREE.PlaneGeometry(26,26),new THREE.MeshBasicMaterial({map:lg,transparent:true}),0,.42,-250); lgm.rotation.x=-Math.PI/2;
+  // photo billboard
+  const pm=M(0x333a44); add(new THREE.BoxGeometry(1.5,18,1.5),pm,-61,9,-210); add(new THREE.BoxGeometry(1.5,18,1.5),pm,-61,9,-170); add(new THREE.BoxGeometry(1,41,61),M(0x151a22),-60.8,36,-190);
+  const board=add(new THREE.PlaneGeometry(60,40),new THREE.MeshBasicMaterial({color:0x9aa7b3,side:THREE.DoubleSide}),-60,36,-190); board.rotation.y=Math.PI/2;
+  const mm=/url\(["']?(.*?)["']?\)/.exec(getComputedStyle($('start')).backgroundImage);
+  if(mm){ const im=new Image(); im.onload=()=>{ const tx=new THREE.Texture(im); tx.minFilter=THREE.LinearFilter; tx.generateMipmaps=false; tx.needsUpdate=true; board.material.map=tx; board.material.color.set(0xffffff); board.material.needsUpdate=true; }; im.src=mm[1]; }
+  // runway edge lights (night only)
+  const rl=new THREE.Group(), lgG=new THREE.BoxGeometry(1,1,1), lgM=new THREE.MeshBasicMaterial({color:0xffe27a});
+  for(let z=-440;z<=440;z+=40) for(const x of[-15.5,15.5]){ const b=new THREE.Mesh(lgG,lgM); b.position.set(x,.6,z); rl.add(b); }
+  rl.visible=false; scene.add(rl); window.rwLights=rl;
+}
+
 // ==== SKY DOME ====
 {
-  const sky=new THREE.Mesh(new THREE.SphereGeometry(6200,24,16),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,fog:false,
+  const sky=new THREE.Mesh(new THREE.SphereGeometry(6200,24,16),new THREE.ShaderMaterial({uniforms:{uH:{value:new THREE.Color(.85,.92,.98)},uT:{value:new THREE.Color(.25,.5,.86)}},side:THREE.BackSide,depthWrite:false,fog:false,
     vertexShader:'varying vec3 w;void main(){w=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-    fragmentShader:'varying vec3 w;void main(){float t=clamp(w.y*1.6,0.,1.);vec3 hz=vec3(.85,.92,.98),top=vec3(.25,.5,.86);gl_FragColor=vec4(mix(hz,top,pow(t,.6)),1.);}'}));
-  sky.renderOrder=-1; scene.add(sky);
+    fragmentShader:'varying vec3 w;uniform vec3 uH,uT;void main(){float t=clamp(w.y*1.6,0.,1.);vec3 hz=uH,top=uT;gl_FragColor=vec4(mix(hz,top,pow(t,.6)),1.);}'}));
+  sky.renderOrder=-1; scene.add(sky); window.skyMat=sky.material;
   addEventListener('load',()=>{});
   sky.onBeforeRender=(rd,sc,cm)=>sky.position.copy(cm.position);
 }
@@ -227,7 +263,7 @@ function buildRingCourse(){
     const lm=new THREE.Mesh(new THREE.PlaneGeometry(32,10),new THREE.MeshBasicMaterial({map:createRingLabelTexture(i+1),side:THREE.DoubleSide}));
     lm.position.set(0,RING_R+8,0); lm.quaternion.copy(q); g.add(lm);
     ringGroup.add(g);
-    rings.push({mesh,pos,axis:dir.clone(),radius:RING_R,cleared:false,idx:i});
+    rings.push({mesh,pos,axis:dir.clone(),radius:RING_R,cleared:false,idx:i,lbl:lm});
   }
 }
 buildRingCourse();
@@ -252,13 +288,15 @@ function checkRings(prevP,curP){
   const a=prevP.clone().sub(r.pos).dot(r.axis), b=curP.clone().sub(r.pos).dot(r.axis);
   if(a*b<=0&&a!==b){
     const t=a/(a-b), hit=prevP.clone().lerp(curP,t);
-    if(hit.distanceTo(r.pos)<r.radius){
+    const hd=hit.distanceTo(r.pos);
+    if(hd>=r.radius&&hd<r.radius*1.2){ elapsedTime+=2; tone(200,.2,'sawtooth',.2); msg('Touched ring edge! +2s'); setTimeout(()=>{ if($('msg').textContent.indexOf('Touched')===0) msg(''); },1000); }
+    if(hd<r.radius){ const gz=hd>r.radius*.8; if(gz) elapsedTime+=2;
       r.cleared=true; ringsCleared++; updateRingMaterials(); tone(880,.12,'square',.12); tone(1320,.18,'square',.12,.1);
       if(ringsCleared>=RING_N){
         ringsUnlockedLanding=true; msg('SBS RANGSIT Course Cleared! You may land now!');
         setTimeout(()=>{ if($('msg').textContent.indexOf('SBS')===0) msg(''); },4000);
       } else {
-        msg(`Ring ${ringsCleared}/${RING_N} Passed! (Good Job!)`);
+        msg(`Ring ${ringsCleared}/${RING_N} Passed!${gz?' Grazed +2s':''}`);
         setTimeout(()=>{ if($('msg').textContent.indexOf('Ring')===0) msg(''); },1200);
       }
     }
@@ -273,7 +311,7 @@ let padRoll=0, padPitch=0, yawBtn=0, dispRoll=0, dispPitch=0;
 
 function reset(){
   p.set(0,80,1000); q.identity(); v.set(0,0,-22); thr=.5; bat=100; state='fly'; msg('');
-  dragRoll=0; dragPitch=0; resetRings(); showLB(false);
+  dragRoll=0; dragPitch=0; resetRings(); showLB(false); loadGhost(); rec=[];
 }
 function msg(t){ const m=$('msg'); m.style.display=t?'block':'none'; m.textContent=t; }
 reset();
@@ -317,6 +355,7 @@ function drawHud(f,r,u,hdg,spd,agl){
   hx.textAlign='right'; hx.fillText(spd.toFixed(1)+' m/s',cx-150*dpr,cy+5*dpr);
   hx.textAlign='left'; hx.fillText(agl.toFixed(0)+' m AGL',cx+150*dpr,cy+5*dpr);
   hx.textAlign='center'; hx.fillText(String(Math.round(hdg)%360).padStart(3,'0')+'°',cx,40*dpr);
+  drawGuide(cx,cy);
 }
 
 const mmc=$('mmc'), mmx=mmc.getContext('2d');
@@ -350,6 +389,7 @@ addEventListener('keydown',e=>{
   keys[e.code]=1;
   if(e.code==='KeyC')camNext();
   if(e.code==='KeyR')reset();
+  if(e.code==='KeyP')togglePause();
   if(e.code==='Digit1'){mode=0;camLbl();}
   if(e.code==='Digit2'){mode=1;camLbl();}
   if(e.code==='Digit3'){mode=2;camLbl();}
@@ -398,19 +438,6 @@ lp.addEventListener('pointerdown',e=>{ lp.setPointerCapture(e.pointerId); setL(e
 lp.addEventListener('pointermove',e=>{ if(lp.hasPointerCapture(e.pointerId))setL(e); });
 const lEnd=()=>{lYaw=0;}; lp.addEventListener('pointerup',lEnd); lp.addEventListener('pointercancel',lEnd);
 
-// ==== Leaderboard (saved on this device) ====
-function lbLoad(){ try{return JSON.parse(localStorage.getItem('sbsLB')||'[]')}catch(e){return[]} }
-function saveScore(){
-  const t=+elapsedTime.toFixed(1), l=lbLoad(); l.push({n:pilotName,t}); l.sort((a,b)=>a.t-b.t); l.length=Math.min(l.length,10);
-  try{localStorage.setItem('sbsLB',JSON.stringify(l))}catch(e){}
-  showLB(true,pilotName,t);
-}
-function showLB(on,hn,ht){
-  const el=$('lb'); if(!on){ el.style.display='none'; return; }
-  const l=lbLoad(), E=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); let mine=false;
-  el.innerHTML='<h3>🏆 Leaderboard</h3><table>'+(l.length?l.map((x,i)=>{ const me=!mine&&x.n===hn&&x.t===ht; if(me)mine=true; return '<tr'+(me?' class="me"':'')+'><td>'+(i+1)+'</td><td>'+E(x.n)+'</td><td>'+formatTime(x.t)+'</td></tr>'; }).join(''):'<tr><td>No flights yet</td></tr>')+'</table><small>Saved on this device · tap to close</small>';
-  el.style.display='block';
-}
 $('lb').onclick=()=>showLB(false);
 $('bL').onclick=()=>showLB($('lb').style.display==='none');
 
@@ -438,7 +465,7 @@ function crashSound(){
 }
 function updateAudio(){
   if(!AC) return;
-  const T=AC.currentTime, on=soundOn&&started&&state==='fly';
+  const T=AC.currentTime, on=soundOn&&started&&state==='fly'&&!paused;
   engG.gain.setTargetAtTime(on?.04+.08*thr:0,T,.1);
   eng.frequency.setTargetAtTime(55+thr*70+Math.min(v.length(),40)*1.2,T,.1);
   eFilt.frequency.setTargetAtTime(300+thr*700,T,.1);
@@ -449,6 +476,110 @@ function updateAudio(){
   }
 }
 $('bS').onclick=e=>{ soundOn=!soundOn; e.target.classList.toggle('on',soundOn); };
+
+// ==== Options, shared leaderboard, ghost, FX ====
+var diff='normal', tod='morning', paused=false, windV=null, drainK=1, rec=[], ghostData=null, sdb=null, sScores=null, lastHn, lastHt;
+const rwT=new V3(0,15,150), qi=new Q(), DL={easy:'Easy',normal:'Normal',hard:'Hard'};
+function applyDifficulty(){
+  const D={easy:{k:1.45,w:0,d:1},normal:{k:1,w:0,d:1},hard:{k:.65,w:1,d:4}}[diff]||{k:1,w:0,d:1};
+  rings.forEach(g=>{ g.mesh.scale.setScalar(D.k); g.radius=RING_R*D.k; g.lbl.position.y=RING_R*D.k+8; });
+  windV=D.w?new V3(7,0,4):null; drainK=D.d;
+}
+const TOD={
+  morning:{bg:0x8cb8e6,hz:[.85,.92,.98],top:[.25,.5,.86],hemi:[0xcfe6ff,.95],sun:[0xfff2d0,.85,[300,500,200]],cloud:0xffffff,lights:0},
+  afternoon:{bg:0xe0a878,hz:[1,.69,.43],top:[.29,.44,.69],hemi:[0xffd9b0,.8],sun:[0xff9a50,.8,[-400,140,-200]],cloud:0xffcfa0,lights:0},
+  night:{bg:0x070b1a,hz:[.06,.1,.22],top:[.01,.02,.06],hemi:[0x4a5a9a,.4],sun:[0x8899ff,.2,[200,400,100]],cloud:0x1c2338,lights:1}
+};
+function applyTod(){
+  const T=TOD[tod]||TOD.morning;
+  scene.background.set(T.bg); scene.fog.color.set(T.bg);
+  skyMat.uniforms.uH.value.setRGB(T.hz[0],T.hz[1],T.hz[2]); skyMat.uniforms.uT.value.setRGB(T.top[0],T.top[1],T.top[2]);
+  hemi.color.set(T.hemi[0]); hemi.intensity=T.hemi[1]; sun.color.set(T.sun[0]); sun.intensity=T.sun[1]; sun.position.set(T.sun[2][0],T.sun[2][1],T.sun[2][2]);
+  cloudMat.color.set(T.cloud); rwLights.visible=!!T.lights;
+}
+document.querySelectorAll('.sel').forEach(g=>g.addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  g.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
+  if(g.id==='selD') diff=b.dataset.v; else { tod=b.dataset.v; applyTod(); }
+}));
+function togglePause(){
+  if(!started||state!=='fly') return;
+  paused=!paused; $('bP').textContent=paused?'Resume':'Pause'; msg(paused?'Paused':'');
+}
+$('bP').onclick=togglePause;
+
+// Easy mode guide arrow
+function drawGuide(cx,cy){
+  if(diff!=='easy'||!started||state!=='fly') return;
+  const tp=ringsUnlockedLanding?rwT:(rings[ringsCleared]&&rings[ringsCleared].pos); if(!tp) return;
+  const dv=tp.clone().sub(p), dist=dv.length(); dv.applyQuaternion(qi.copy(q).invert());
+  const off=Math.acos(clamp(-dv.z/dist)), ang=Math.atan2(dv.x,dv.y), y=96*dpr;
+  hx.save(); hx.fillStyle='#00d2ff'; hx.textAlign='center'; hx.font=`bold ${14*dpr}px monospace`;
+  if(off>.14){
+    hx.translate(cx,y); hx.rotate(ang); hx.beginPath(); hx.moveTo(0,-18*dpr); hx.lineTo(13*dpr,12*dpr); hx.lineTo(0,5*dpr); hx.lineTo(-13*dpr,12*dpr); hx.closePath(); hx.fill();
+    hx.rotate(-ang); hx.fillText(`${dist|0} m`,0,34*dpr);
+  } else hx.fillText(`\u25b2 ${dist|0} m`,cx,y);
+  hx.restore();
+}
+
+// Shared leaderboard (db) with local fallback
+(async()=>{ try{ if(window.claude&&claude.use){ sdb=await claude.use('db'); if(sdb) sdb.collection('scores').orderBy('t','asc').limit(100).onSnapshot(sn=>{ sScores=sn.docs.map(d=>d.data()); if($('lb').style.display!=='none') showLB(true,lastHn,lastHt); },()=>{ sScores=null; }); } }catch(e){ sdb=null; } })();
+function lbLoad(){ try{return JSON.parse(localStorage.getItem('sbsLB')||'[]')}catch(e){return[]} }
+function lbList(){ return (sScores||lbLoad()).filter(x=>(x.d||'normal')===diff&&typeof x.t==='number').slice(0,10); }
+function saveScore(){
+  const t=+elapsedTime.toFixed(1), l=lbLoad(); l.push({n:pilotName,t,d:diff}); l.sort((a,b)=>a.t-b.t); l.length=Math.min(l.length,60);
+  try{localStorage.setItem('sbsLB',JSON.stringify(l))}catch(e){}
+  try{ const g=JSON.parse(localStorage.getItem('sbsGhost_'+diff)||'null'); if(!g||t<g.t) localStorage.setItem('sbsGhost_'+diff,JSON.stringify({t,s:rec})); }catch(e){}
+  if(sdb){ try{ sdb.collection('scores').doc('s'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)).set({n:pilotName,t,d:diff,tod,at:Date.now()}).catch(()=>{}); }catch(e){} }
+  lastHn=pilotName; lastHt=t; showLB(true,pilotName,t);
+}
+function showLB(on,hn,ht){
+  const el=$('lb'); if(!on){ el.style.display='none'; return; }
+  const l=lbList(), E=x=>String(x).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); let mine=false;
+  el.innerHTML='<h3>\ud83c\udfc6 '+DL[diff]+' \u00b7 '+(sScores?'All pilots':'This device')+'</h3><table>'+(l.length?l.map((x,i)=>{ const me=!mine&&x.n===hn&&x.t===ht; if(me)mine=true; return '<tr'+(me?' class="me"':'')+'><td>'+(i+1)+'</td><td>'+E(x.n)+'</td><td>'+formatTime(x.t)+'</td></tr>'; }).join(''):'<tr><td>No flights yet</td></tr>')+'</table><small>Tap to close</small>';
+  el.style.display='block';
+}
+
+// Ghost (best run per difficulty, this device)
+const ghost=plane.clone(true); ghost.traverse(o=>{ if(o.isMesh) o.material=new THREE.MeshBasicMaterial({color:0x7fe7ff,transparent:true,opacity:.3,depthWrite:false,side:THREE.DoubleSide}); }); ghost.visible=false; scene.add(ghost);
+const ga=new Q(), gb=new Q();
+function loadGhost(){ try{ ghostData=JSON.parse(localStorage.getItem('sbsGhost_'+(diff||'normal'))||'null'); }catch(e){ ghostData=null; } }
+function recGhost(){
+  if(state!=='fly'||!started||paused||!timerRunning) return;
+  const k=elapsedTime/.1, m=[+p.x.toFixed(1),+p.y.toFixed(1),+p.z.toFixed(1),+q.x.toFixed(3),+q.y.toFixed(3),+q.z.toFixed(3),+q.w.toFixed(3)];
+  while(rec.length<=k) rec.push(m);
+}
+function updateGhost(){
+  if(!ghostData||state!=='fly'||!started){ ghost.visible=false; return; }
+  const s=ghostData.s, i=elapsedTime/.1, k=Math.floor(i); if(k>=s.length-1){ ghost.visible=false; return; }
+  const a=s[k], b=s[k+1], t=i-k;
+  ghost.position.set(a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t);
+  ghost.quaternion.copy(ga.set(a[3],a[4],a[5],a[6]).slerp(gb.set(b[3],b[4],b[5],b[6]),t)); ghost.visible=true;
+}
+loadGhost();
+
+// Particles: contrail + crash sparks/smoke
+const NP=500, pPos=new Float32Array(NP*3), pCol=new Float32Array(NP*3), pVel=new Float32Array(NP*3), pLife=new Float32Array(NP);
+for(let i=0;i<NP;i++) pPos[i*3+1]=-9999;
+const pg=new THREE.BufferGeometry(); pg.setAttribute('position',new THREE.BufferAttribute(pPos,3)); pg.setAttribute('color',new THREE.BufferAttribute(pCol,3));
+const pts=new THREE.Points(pg,new THREE.PointsMaterial({size:5,vertexColors:true,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false})); pts.frustumCulled=false; scene.add(pts);
+let pI=0, trailT=0, lastFx='fly';
+function emit(x,y,z,vx,vy,vz,life,cr,cg,cb){ const i=pI++%NP, j=i*3; pPos[j]=x;pPos[j+1]=y;pPos[j+2]=z; pVel[j]=vx;pVel[j+1]=vy;pVel[j+2]=vz; pCol[j]=cr;pCol[j+1]=cg;pCol[j+2]=cb; pLife[i]=life; }
+function updateFX(dt){
+  if(state==='fly'&&started&&!paused&&thr>.2){ trailT+=dt; if(trailT>.04){ trailT=0; for(const sd of[-1,1]) emit(p.x+r.x*sd*9.5-f.x*2.5,p.y+r.y*sd*9.5-f.y*2.5,p.z+r.z*sd*9.5-f.z*2.5,0,0,0,1.2,.7,.8,.9); } }
+  if(state==='crashed'&&lastFx!=='crashed'){
+    for(let i=0;i<70;i++){ const a=Math.random()*6.28, e=Math.random()*3.14-1.57, sp=10+Math.random()*30; emit(p.x,p.y+1,p.z,Math.cos(a)*Math.cos(e)*sp,Math.abs(Math.sin(e))*sp*.8+4,Math.sin(a)*Math.cos(e)*sp,.6+Math.random()*.8,1,.55,.15); }
+    for(let i=0;i<70;i++) emit(p.x+(Math.random()-.5)*6,p.y+1,p.z+(Math.random()-.5)*6,(Math.random()-.5)*8,6+Math.random()*8,(Math.random()-.5)*8,2+Math.random()*1.5,.45,.45,.45);
+  }
+  lastFx=state;
+  const kf=Math.pow(.35,dt);
+  for(let i=0;i<NP;i++){
+    if(pLife[i]<=0) continue; pLife[i]-=dt; const j=i*3;
+    if(pLife[i]<=0){ pPos[j+1]=-9999; continue; }
+    pVel[j+1]-=6*dt; pPos[j]+=pVel[j]*dt; pPos[j+1]+=pVel[j+1]*dt; pPos[j+2]+=pVel[j+2]*dt; pCol[j]*=kf; pCol[j+1]*=kf; pCol[j+2]*=kf;
+  }
+  pg.attributes.position.needsUpdate=true; pg.attributes.color.needsUpdate=true;
+}
 
 let camDeg=0; const tq=new Q();
 $('cm').onclick=()=>{ camDeg=(camDeg+10)%50; };
@@ -484,6 +615,7 @@ function onOri(e){
 }
 async function begin(useTilt,useDrag){
   initAudio(); pilotName=($('pname').value.trim()||'Pilot').slice(0,16); try{localStorage.setItem('sbsName',pilotName)}catch(e){}
+  applyDifficulty(); applyTod(); reset();
   tilt=false; dragMode=false;
   if(useTilt){
     try{
@@ -535,14 +667,14 @@ function step(dt){
   if(spdF<15) q.multiply(dq.setFromAxisAngle(X,-(15-clamp(spdF,0,15))*.04*dt));
   q.normalize();
   f.set(0,0,-1).applyQuaternion(q); u.set(0,1,0).applyQuaternion(q);
-  const te=bat>0?thr:0; bat=Math.max(0,bat-thr*dt*.12);
+  const te=bat>0?thr:0; bat=Math.max(0,bat-thr*dt*.12*(drainK||1));
   const s=Math.max(0,v.dot(f)), lift=10*Math.min(1,s*s/361);
   tmp.copy(f).multiplyScalar(te*16).addScaledVector(u,lift).addScaledVector(v,-v.length()*.0085);
   tmp.y-=9.8; v.addScaledVector(tmp,dt);
   const along=v.dot(f);
   tmp.copy(v).addScaledVector(f,-along).multiplyScalar(Math.exp(-2.2*dt));
   v.copy(f).multiplyScalar(along).add(tmp);
-  p.addScaledVector(v,dt); spin=te;
+  p.addScaledVector(v,dt); if(windV) p.addScaledVector(windV,dt*(1+.5*Math.sin(elapsedTime*.5))); spin=te;
   checkRings(prevP,p);
   const onRw=Math.abs(p.x)<15&&Math.abs(p.z)<450;
   const gh=hgt(p.x,p.z)+(onRw?.3:0);
@@ -566,7 +698,7 @@ function frame(now){
   requestAnimationFrame(frame);
   const dt=Math.min(.05,(now-last)/1000); last=now;
   if(started){
-    if(state==='fly'){ step(dt); if(timerRunning) elapsedTime+=dt; }
+    if(state==='fly'){ if(!paused){ step(dt); if(timerRunning) elapsedTime+=dt; } }
     else if(state==='landed'){ v.multiplyScalar(Math.exp(-.7*dt)); p.addScaledVector(v,dt); p.y=hgt(p.x,p.z)+1.3; spin=0; }
     else if(state==='crashed'){ spin=0; crashT-=dt; if(crashT<=0) reset(); }
   }
@@ -594,7 +726,7 @@ function frame(now){
   drawHud(f,r,u,hdg,spd,agl);
   drawMiniMap();
   $('lknob').style.transform=`translate(${dispYaw*47}px,${(1-2*thr)*47}px)`;
-  updateAudio();
+  updateAudio(); updateFX(dt); updateGhost(); recGhost();
   $('kv').textContent=Math.round(spd*3.6); $('ca').textContent=camDeg+'°';
 }
 requestAnimationFrame(frame);
