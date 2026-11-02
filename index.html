@@ -22,9 +22,16 @@ button.on{background:var(--acc);color:#06121f}
 #bar div:last-child{border:0}
 #bar i{display:block;font-style:normal;font-size:10px;opacity:.7}
 #bar b{font-size:16px}
-#thr{left:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 90px);width:58px;height:38vh;padding:0;touch-action:none;overflow:hidden}
-#fill{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(0deg,#2b9bd6,var(--acc));opacity:.75}
+#thr{left:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 90px);width:58px;height:38vh;padding:0;touch-action:none;overflow:hidden;border:2px solid var(--acc)}
+#fill{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(0deg,#2b9bd6,var(--acc));opacity:.85}
 #tv{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl;font-size:13px;text-shadow:0 1px 3px #000}
+#pad{right:18px;bottom:calc(env(safe-area-inset-bottom,0px) + 90px);width:150px;height:150px;padding:0;border-radius:50%;border:2px solid var(--acc);touch-action:none;background:rgba(8,16,30,.55)}
+#pad::before,#pad::after{content:"";position:absolute;background:rgba(154,230,255,.35)}
+#pad::before{left:50%;top:10px;bottom:10px;width:1px}
+#pad::after{top:50%;left:10px;right:10px;height:1px}
+#knob{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:var(--acc);opacity:.85;box-shadow:0 0 0 3px rgba(6,18,31,.6)}
+#yaw{right:18px;bottom:calc(env(safe-area-inset-bottom,0px) + 252px);display:flex;gap:10px;padding:0;background:none}
+#yaw button{width:70px;padding:12px 0;font-size:15px;border:2px solid var(--acc);touch-action:none}
 #msg{top:30%;left:50%;transform:translateX(-50%);font-size:20px;text-align:center;display:none;max-width:80vw}
 #start{inset:0;border-radius:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(6,12,24,.88);text-align:center;padding:24px;z-index:10}
 #start h1{margin:0;font-size:30px}
@@ -36,59 +43,46 @@ button.on{background:var(--acc);color:#06121f}
 <body>
 <canvas id="r"></canvas>
 <canvas id="hc"></canvas>
-
 <div class="p" id="tl"><span id="cam">FPV</span> · <span id="ctl">KEYS</span></div>
 <div class="p" id="mm"><canvas id="mmc" width="260" height="260"></canvas></div>
-
 <div id="tr" class="p">
-  <button id="bC">Camera</button>
-  <button id="bR">Reset</button>
-  <button id="bK">Calibrate</button>
-  <button id="bI">Invert pitch</button>
-  <button id="bA" class="on">Assist</button>
-  <button id="bF">Fullscreen</button>
+  <button id="bC">Camera</button><button id="bR">Reset</button><button id="bK">Calibrate</button><button id="bI">Invert pitch</button><button id="bA" class="on">Assist</button><button id="bF">Fullscreen</button>
 </div>
-
 <div class="p" id="thr"><div id="fill"></div><div id="tv">THROTTLE 50%</div></div>
+<div class="p" id="pad"><div id="knob"></div></div>
+<div class="p" id="yaw"><button id="yL">⟲ Yaw</button><button id="yR">Yaw ⟳</button></div>
 <div class="p" id="bar"></div>
 <div class="p" id="msg"></div>
-
 <div class="p" id="start">
   <h1>SBS RANGSIT FPV Simulator</h1>
   <p>Fly through <b>all 10 branded rings</b> as fast as you can — only then can you land safely on the runway. Your total flight time will be tracked!</p>
   <button id="sT">Start with tilt (tablet)</button>
   <button id="sS">Start with screen drag (iPad touch)</button>
   <button id="sK">Start with keyboard</button>
-  <p>Keyboard: arrows = roll/pitch (Up = nose down), A/D = yaw, W/S = throttle, C = camera, R = reset.</p>
+  <p>Keyboard: arrows = roll/pitch (Up = nose down), A/D = yaw, W/S = throttle, C = camera, R = reset. On touch: use the round stick (bottom right), yaw buttons and throttle bar.</p>
   <p id="note"></p>
 </div>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 const V3=THREE.Vector3, Q=THREE.Quaternion;
 const X=new V3(1,0,0), Y=new V3(0,1,0), Z=new V3(0,0,1);
 const clamp=(x,a=-1,b=1)=>Math.max(a,Math.min(b,x));
-
 const renderer=new THREE.WebGLRenderer({canvas:$('r'), antialias:true});
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x8cb8e6);
 scene.fog=new THREE.Fog(0x8cb8e6,500,3800);
-
 const cam=new THREE.PerspectiveCamera(70,1,.5,7000);
 scene.add(new THREE.HemisphereLight(0xcfe6ff,0x4a5a2a,.95));
 const sun=new THREE.DirectionalLight(0xfff2d0,.85);
-sun.position.set(300,500,200);
-scene.add(sun);
+sun.position.set(300,500,200); scene.add(sun);
 
-// Terrain Function
 function hgt(x,z){
   const d=Math.hypot(x,z), k=clamp((d-700)/900,0,1), s=k*k*(3-2*k);
   const n=Math.sin(x*.0021)*Math.cos(z*.0017)*40+Math.sin(x*.006+z*.004)*12+Math.sin(z*.011-x*.007)*5;
   const m=d>1800?Math.pow((d-1800)/1500,2)*260:0;
   return(n+m)*s;
 }
-
 const tg=new THREE.PlaneGeometry(9000,9000,180,180);
 tg.rotateX(-Math.PI/2);
 {
@@ -107,15 +101,11 @@ tg.rotateX(-Math.PI/2);
 }
 scene.add(new THREE.Mesh(tg,new THREE.MeshLambertMaterial({vertexColors:true})));
 
-// Runway
 const rw=new THREE.Mesh(new THREE.BoxGeometry(30,.3,900),new THREE.MeshLambertMaterial({color:0x3a3d42}));
 rw.position.y=.15; scene.add(rw);
 const dg=new THREE.BoxGeometry(1,.32,24), dm=new THREE.MeshBasicMaterial({color:0xffffff});
-for(let i=0;i<17;i++){
-  const d=new THREE.Mesh(dg,dm); d.position.set(0,.16,-400+i*50); scene.add(d);
-}
+for(let i=0;i<17;i++){ const d=new THREE.Mesh(dg,dm); d.position.set(0,.16,-400+i*50); scene.add(d); }
 
-// Environment Features (Trees & Clouds)
 {
   const tm=new THREE.InstancedMesh(new THREE.ConeGeometry(5,18,6).translate(0,9,0),new THREE.MeshLambertMaterial({color:0x2f5d2a}),900), m4=new THREE.Matrix4();
   let n=0;
@@ -138,12 +128,8 @@ for(let i=0;i<17;i++){
   }
 }
 
-// Plane Mesh
 const plane=new THREE.Group(), mat=c=>new THREE.MeshLambertMaterial({color:c});
-const bx=(w,h,d,c,x,y,z)=>{
-  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(c));
-  m.position.set(x,y,z); plane.add(m); return m;
-};
+const bx=(w,h,d,c,x,y,z)=>{ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(c)); m.position.set(x,y,z); plane.add(m); return m; };
 bx(1.2,1.2,6,0xf4f4f4,0,0,0);
 bx(14,.25,2,0xff6a1a,0,.2,-.3);
 bx(5,.2,1.4,0xff6a1a,0,.2,2.7);
@@ -151,171 +137,98 @@ bx(.2,1.8,1.4,0xff6a1a,0,.9,2.7);
 const prop=bx(.2,3,.3,0x222222,0,0,-3.1);
 scene.add(plane);
 
-// ==== BRANDED RINGS & NUMBERS ====
-const RING_N = 10;
-const rings = []; 
-const ringGroup = new THREE.Group(); scene.add(ringGroup);
-const RING_R = 22;
-const RING_TUBE = 2.2;
-const ringGeo = new THREE.TorusGeometry(RING_R, RING_TUBE, 12, 40);
+const RING_N=10, rings=[], ringGroup=new THREE.Group(); scene.add(ringGroup);
+const RING_R=22, RING_TUBE=2.2;
+const ringGeo=new THREE.TorusGeometry(RING_R,RING_TUBE,12,40);
+const ringMatPending=new THREE.MeshLambertMaterial({color:0xff3333, emissive:0x550000});
+const ringMatNext=new THREE.MeshLambertMaterial({color:0x00d2ff, emissive:0x004488});
+const ringMatDone=new THREE.MeshStandardMaterial({color:0x39ff14, emissive:0x11ff11, emissiveIntensity:0.8, roughness:0.2});
 
-// Ring Materials
-const ringMatPending = new THREE.MeshLambertMaterial({color:0xff3333, emissive:0x550000});
-const ringMatNext    = new THREE.MeshLambertMaterial({color:0x00d2ff, emissive:0x004488});
-const ringMatDone    = new THREE.MeshStandardMaterial({color:0x39ff14, emissive:0x11ff11, emissiveIntensity:0.8, roughness:0.2});
-
-// Dynamic Canvas Texture Helper for "SBS RANGSIT" + Extra Large Ring Number
-function createRingLabelTexture(num) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 512; canvas.height = 160;
-  const ctx = canvas.getContext('2d');
-  
-  ctx.fillStyle = '#081428';
-  ctx.fillRect(0,0,512,160);
-  ctx.strokeStyle = '#00d2ff';
-  ctx.lineWidth = 8;
-  ctx.strokeRect(4,4,504,152);
-  
-  ctx.fillStyle = '#9ae6ff';
-  ctx.font = 'bold 32px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('SBS RANGSIT', 256, 42);
-  
-  ctx.fillStyle = '#ffffff';
-  ctx.font = '900 84px sans-serif';
-  ctx.fillText(`#${num}`, 256, 128);
-
+function createRingLabelTexture(num){
+  const canvas=document.createElement('canvas'); canvas.width=512; canvas.height=160;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#081428'; ctx.fillRect(0,0,512,160);
+  ctx.strokeStyle='#00d2ff'; ctx.lineWidth=8; ctx.strokeRect(4,4,504,152);
+  ctx.fillStyle='#9ae6ff'; ctx.font='bold 32px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('SBS RANGSIT',256,42);
+  ctx.fillStyle='#ffffff'; ctx.font='900 84px sans-serif';
+  ctx.fillText(`#${num}`,256,128);
   return new THREE.CanvasTexture(canvas);
 }
-
 function buildRingCourse(){
-  const pts = [
-    [  0, 95,  820],
-    [-120, 90,  520],
-    [ 160, 85,  220],
-    [-180, 78, -120],
-    [ 140, 72, -460],
-    [ -90, 68, -780],
-    [ 220, 72,-1000],
-    [-160, 80,-1180],
-    [  60, 86, -980],
-    [   0, 90, -560]
-  ];
-
+  const pts=[[0,95,820],[-120,90,520],[160,85,220],[-180,78,-120],[140,72,-460],[-90,68,-780],[220,72,-1000],[-160,80,-1180],[60,86,-980],[0,90,-560]];
   for(let i=0;i<RING_N;i++){
     const [x,y,z]=pts[i];
-    const next = i<RING_N-1 ? pts[i+1] : [0,70,0];
-    const dir = new V3(next[0]-x, next[1]-y, next[2]-z).normalize();
-    const pos = new V3(x,y,z);
-
-    const ringContainer = new THREE.Group();
-    ringContainer.position.copy(pos);
-
-    // Torus Ring Mesh
-    const mesh = new THREE.Mesh(ringGeo, ringMatPending);
-    const q = new Q().setFromUnitVectors(Z, dir);
-    mesh.quaternion.copy(q);
-    ringContainer.add(mesh);
-
-    // Top Sign Banner (SBS RANGSIT + Extra Large Number)
-    const labelTex = createRingLabelTexture(i+1);
-    const labelGeo = new THREE.PlaneGeometry(32, 10);
-    const labelMat = new THREE.MeshBasicMaterial({map: labelTex, side: THREE.DoubleSide});
-    const labelMesh = new THREE.Mesh(labelGeo, labelMat);
-    labelMesh.position.set(0, RING_R + 8, 0);
-    labelMesh.quaternion.copy(q);
-    ringContainer.add(labelMesh);
-
-    ringGroup.add(ringContainer);
-    rings.push({mesh, pos, axis:dir.clone(), radius:RING_R, cleared:false, idx:i});
+    const next=i<RING_N-1?pts[i+1]:[0,70,0];
+    const dir=new V3(next[0]-x,next[1]-y,next[2]-z).normalize();
+    const pos=new V3(x,y,z);
+    const g=new THREE.Group(); g.position.copy(pos);
+    const mesh=new THREE.Mesh(ringGeo,ringMatPending);
+    const q=new Q().setFromUnitVectors(Z,dir);
+    mesh.quaternion.copy(q); g.add(mesh);
+    const lm=new THREE.Mesh(new THREE.PlaneGeometry(32,10),new THREE.MeshBasicMaterial({map:createRingLabelTexture(i+1),side:THREE.DoubleSide}));
+    lm.position.set(0,RING_R+8,0); lm.quaternion.copy(q); g.add(lm);
+    ringGroup.add(g);
+    rings.push({mesh,pos,axis:dir.clone(),radius:RING_R,cleared:false,idx:i});
   }
 }
 buildRingCourse();
 
-let ringsCleared = 0;
-let ringsUnlockedLanding = false;
-
-// ==== TIMER TRACKING ====
-let elapsedTime = 0;
-let timerRunning = false;
-
-function formatTime(s){
-  const m = Math.floor(s / 60);
-  const sec = (s % 60).toFixed(1);
-  return `${m}:${sec.padStart(4, '0')}`;
-}
-
+let ringsCleared=0, ringsUnlockedLanding=false, elapsedTime=0, timerRunning=false;
+function formatTime(s){ const m=Math.floor(s/60), sec=(s%60).toFixed(1); return `${m}:${sec.padStart(4,'0')}`; }
 function resetRings(){
-  ringsCleared = 0; ringsUnlockedLanding=false;
-  elapsedTime = 0; timerRunning = true;
-  for(const r of rings){ r.cleared=false; r.mesh.material = ringMatPending; }
-  if(rings[0]) rings[0].mesh.material = ringMatNext;
+  ringsCleared=0; ringsUnlockedLanding=false; elapsedTime=0; timerRunning=true;
+  for(const r of rings){ r.cleared=false; r.mesh.material=ringMatPending; }
+  if(rings[0]) rings[0].mesh.material=ringMatNext;
 }
 resetRings();
-
 function updateRingMaterials(){
   for(let i=0;i<rings.length;i++){
     const r=rings[i];
-    if(r.cleared) r.mesh.material = ringMatDone;
-    else if(i===ringsCleared) r.mesh.material = ringMatNext;
-    else r.mesh.material = ringMatPending;
+    r.mesh.material=r.cleared?ringMatDone:(i===ringsCleared?ringMatNext:ringMatPending);
   }
 }
-
-function checkRings(prevP, curP){
+function checkRings(prevP,curP){
   if(ringsUnlockedLanding) return;
-  const r = rings[ringsCleared];
-  if(!r) return;
-  
-  const a = prevP.clone().sub(r.pos).dot(r.axis);
-  const b = curP.clone().sub(r.pos).dot(r.axis);
-  if(a*b <= 0 && a!==b){
-    const t = a/(a-b);
-    const hit = prevP.clone().lerp(curP, t);
-    const d = hit.distanceTo(r.pos);
-    if(d < r.radius){
-      r.cleared = true;
-      ringsCleared++;
-      updateRingMaterials();
-      if(ringsCleared >= RING_N){
-        ringsUnlockedLanding = true;
-        msg('SBS RANGSIT Course Cleared! You may land now!');
-        setTimeout(()=>{ if($('msg').textContent.indexOf('SBS')===0) msg(''); }, 4000);
+  const r=rings[ringsCleared]; if(!r) return;
+  const a=prevP.clone().sub(r.pos).dot(r.axis), b=curP.clone().sub(r.pos).dot(r.axis);
+  if(a*b<=0&&a!==b){
+    const t=a/(a-b), hit=prevP.clone().lerp(curP,t);
+    if(hit.distanceTo(r.pos)<r.radius){
+      r.cleared=true; ringsCleared++; updateRingMaterials();
+      if(ringsCleared>=RING_N){
+        ringsUnlockedLanding=true; msg('SBS RANGSIT Course Cleared! You may land now!');
+        setTimeout(()=>{ if($('msg').textContent.indexOf('SBS')===0) msg(''); },4000);
       } else {
         msg(`Ring ${ringsCleared}/${RING_N} Passed! (SBS RANGSIT)`);
-        setTimeout(()=>{ if($('msg').textContent.indexOf('Ring')===0) msg(''); }, 1200);
+        setTimeout(()=>{ if($('msg').textContent.indexOf('Ring')===0) msg(''); },1200);
       }
     }
   }
 }
 
-// Controller & Game State
 let p=new V3(), q=new Q(), v=new V3(), thr=.5, bat=100, state='fly', mode=0, assist=true, invert=false, started=false;
 let tilt=false, tiltTimer=0, dragMode=false;
 const keys={}; let raw=null, cal=null, tRoll=0, tPitch=0;
 let dragActive=false, dragStartX=0, dragStartY=0, dragCurX=0, dragCurY=0, dragRoll=0, dragPitch=0;
+let padRoll=0, padPitch=0, yawBtn=0, dispRoll=0, dispPitch=0;
 
 function reset(){
   p.set(0,80,1000); q.identity(); v.set(0,0,-22); thr=.5; bat=100; state='fly'; msg('');
-  dragRoll=0; dragPitch=0;
-  resetRings();
+  dragRoll=0; dragPitch=0; resetRings();
 }
 function msg(t){ const m=$('msg'); m.style.display=t?'block':'none'; m.textContent=t; }
 reset();
 
-// HUD UI Bar Setup with TIME counter
 const items=[['TIME','tm'],['SPEED','sp'],['HEIGHT','al'],['THR','th'],['V/S','vs'],['HEADING','hd'],['RINGS','rg'],['BAT','bt']];
 $('bar').innerHTML=items.map(a=>`<div><i>${a[0]}</i><b id="${a[1]}">0:00.0</b></div>`).join('');
 
 const hc=$('hc'), hx=hc.getContext('2d'); let dpr=1;
 function resize(){
   dpr=Math.min(devicePixelRatio||1,2);
-  renderer.setPixelRatio(dpr);
-  renderer.setSize(innerWidth,innerHeight,false);
-  cam.aspect=innerWidth/innerHeight;
-  cam.updateProjectionMatrix();
-  hc.width=innerWidth*dpr;
-  hc.height=innerHeight*dpr;
+  renderer.setPixelRatio(dpr); renderer.setSize(innerWidth,innerHeight,false);
+  cam.aspect=innerWidth/innerHeight; cam.updateProjectionMatrix();
+  hc.width=innerWidth*dpr; hc.height=innerHeight*dpr;
 }
 addEventListener('resize',resize); resize();
 
@@ -323,93 +236,58 @@ function drawHud(f,r,u,hdg,spd,agl){
   const W=hc.width, H=hc.height;
   hx.clearRect(0,0,W,H);
   if(mode!==0) return;
-
   const pitch=Math.asin(clamp(f.y))*57.3, bank=Math.atan2(-r.y,u.y), px=H/70;
-  hx.save();
-  hx.translate(W/2,H/2);
-  hx.rotate(-bank);
+  hx.save(); hx.translate(W/2,H/2); hx.rotate(-bank);
   hx.strokeStyle='rgba(255,255,255,.9)'; hx.fillStyle='#fff'; hx.lineWidth=2*dpr; hx.font=`${12*dpr}px monospace`;
-
   for(let a=-30;a<=30;a+=10){
     const y=(pitch-a)*px; if(Math.abs(y)>H) continue;
-    hx.setLineDash(a<0?[8*dpr,6*dpr]:[]);
-    hx.beginPath();
-    if(a===0){
-      hx.moveTo(-W*.4,y); hx.lineTo(-W*.07,y); hx.moveTo(W*.07,y); hx.lineTo(W*.4,y);
-    } else {
+    hx.setLineDash(a<0?[8*dpr,6*dpr]:[]); hx.beginPath();
+    if(a===0){ hx.moveTo(-W*.4,y); hx.lineTo(-W*.07,y); hx.moveTo(W*.07,y); hx.lineTo(W*.4,y); }
+    else {
       hx.moveTo(-90*dpr,y); hx.lineTo(-30*dpr,y); hx.moveTo(30*dpr,y); hx.lineTo(90*dpr,y);
       hx.fillText(Math.abs(a),-125*dpr,y+4*dpr); hx.fillText(Math.abs(a),98*dpr,y+4*dpr);
     }
     hx.stroke();
   }
   hx.restore();
-
   hx.setLineDash([]); hx.strokeStyle='#fff'; hx.fillStyle='#fff'; hx.lineWidth=2*dpr;
   const cx=W/2, cy=H/2;
-  hx.beginPath();
-  hx.arc(cx,cy,9*dpr,0,7);
-  hx.moveTo(cx-26*dpr,cy); hx.lineTo(cx-9*dpr,cy);
-  hx.moveTo(cx+9*dpr,cy); hx.lineTo(cx+26*dpr,cy);
-  hx.moveTo(cx,cy-9*dpr); hx.lineTo(cx,cy-20*dpr);
-  hx.stroke();
-
+  hx.beginPath(); hx.arc(cx,cy,9*dpr,0,7);
+  hx.moveTo(cx-26*dpr,cy); hx.lineTo(cx-9*dpr,cy); hx.moveTo(cx+9*dpr,cy); hx.lineTo(cx+26*dpr,cy);
+  hx.moveTo(cx,cy-9*dpr); hx.lineTo(cx,cy-20*dpr); hx.stroke();
   hx.font=`bold ${16*dpr}px monospace`;
   hx.textAlign='right'; hx.fillText(spd.toFixed(1)+' m/s',cx-150*dpr,cy+5*dpr);
   hx.textAlign='left'; hx.fillText(agl.toFixed(0)+' m AGL',cx+150*dpr,cy+5*dpr);
   hx.textAlign='center'; hx.fillText(String(Math.round(hdg)%360).padStart(3,'0')+'°',cx,40*dpr);
 }
 
-// Mini-map Rendering
 const mmc=$('mmc'), mmx=mmc.getContext('2d');
-const MM_W=mmc.width, MM_H=mmc.height;
-const MM_SCALE = MM_W/2400;
-
+const MM_W=mmc.width, MM_H=mmc.height, MM_SCALE=MM_W/2400;
 function drawMiniMap(){
   const cx=MM_W/2, cy=MM_H/2, R=MM_W/2;
-  mmx.clearRect(0,0,MM_W,MM_H);
-  mmx.save();
+  mmx.clearRect(0,0,MM_W,MM_H); mmx.save();
   mmx.beginPath(); mmx.arc(cx,cy,R-2,0,7); mmx.clip();
-
   mmx.fillStyle='rgba(8,20,36,0.85)'; mmx.fillRect(0,0,MM_W,MM_H);
-
-  const sx = x => cx + (x - p.x)*MM_SCALE;
-  const sz = z => cy + (z - p.z)*MM_SCALE;
-
-  // Runway
+  const sx=x=>cx+(x-p.x)*MM_SCALE, sz=z=>cy+(z-p.z)*MM_SCALE;
   mmx.strokeStyle='#6a6f78'; mmx.lineWidth=6;
   mmx.beginPath(); mmx.moveTo(sx(0),sz(-450)); mmx.lineTo(sx(0),sz(450)); mmx.stroke();
-
-  // Rings
   for(let i=0;i<rings.length;i++){
-    const r=rings[i];
-    const x=sx(r.pos.x), y=sz(r.pos.z);
+    const r=rings[i], x=sx(r.pos.x), y=sz(r.pos.z);
     if(x<-20||x>MM_W+20||y<-20||y>MM_H+20) continue;
     mmx.beginPath(); mmx.arc(x,y,6,0,7);
-    if(r.cleared) mmx.fillStyle='#39ff14';
-    else if(i===ringsCleared) mmx.fillStyle='#00d2ff';
-    else mmx.fillStyle='#ff3333';
-    mmx.fill();
+    mmx.fillStyle=r.cleared?'#39ff14':(i===ringsCleared?'#00d2ff':'#ff3333'); mmx.fill();
     if(i===ringsCleared){ mmx.strokeStyle='#fff'; mmx.lineWidth=2; mmx.stroke(); }
   }
-
-  // Aircraft
-  let hf = new V3(0,0,-1).applyQuaternion(q);
-  const hx2 = Math.atan2(hf.x, -hf.z);
+  const hf=new V3(0,0,-1).applyQuaternion(q), hx2=Math.atan2(hf.x,-hf.z);
   mmx.save(); mmx.translate(cx,cy); mmx.rotate(hx2);
   mmx.fillStyle='#fff'; mmx.strokeStyle='#06121f'; mmx.lineWidth=2;
-  mmx.beginPath(); mmx.moveTo(0,-10); mmx.lineTo(7,9); mmx.lineTo(0,5); mmx.lineTo(-7,9); mmx.closePath();
-  mmx.fill(); mmx.stroke();
-  mmx.restore();
-
-  mmx.restore();
-  mmx.beginPath(); mmx.arc(cx,cy,R-2,0,7);
-  mmx.strokeStyle='rgba(154,230,255,0.9)'; mmx.lineWidth=3; mmx.stroke();
-
+  mmx.beginPath(); mmx.moveTo(0,-10); mmx.lineTo(7,9); mmx.lineTo(0,5); mmx.lineTo(-7,9); mmx.closePath(); mmx.fill(); mmx.stroke();
+  mmx.restore(); mmx.restore();
+  mmx.beginPath(); mmx.arc(cx,cy,R-2,0,7); mmx.strokeStyle='rgba(154,230,255,0.9)'; mmx.lineWidth=3; mmx.stroke();
   mmx.fillStyle='#eef5ff'; mmx.font='bold 18px monospace'; mmx.textAlign='left';
-  mmx.fillText(`${ringsCleared}/${RING_N}`, 12, 26);
+  mmx.fillText(`${ringsCleared}/${RING_N}`,12,26);
 }
 
-// Event Listeners & Control Handlers
 addEventListener('keydown',e=>{
   keys[e.code]=1;
   if(e.code==='KeyC')camNext();
@@ -420,12 +298,11 @@ addEventListener('keydown',e=>{
   if(e.code.startsWith('Arrow')||e.code==='Space')e.preventDefault();
 });
 addEventListener('keyup',e=>keys[e.code]=0);
-
 function camLbl(){ $('cam').textContent=['FPV','Chase','Ground'][mode]; plane.visible=mode!==0; }
 function camNext(){ mode=(mode+1)%3; camLbl(); }
+mode=0; camLbl(); // default POV = FPV (plane hidden, HUD on)
 
-$('bC').onclick=camNext;
-$('bR').onclick=reset;
+$('bC').onclick=camNext; $('bR').onclick=reset;
 $('bK').onclick=()=>{if(raw)cal={...raw};};
 $('bI').onclick=e=>{invert=!invert; e.target.classList.toggle('on',invert);};
 $('bA').onclick=e=>{assist=!assist; e.target.classList.toggle('on',assist);};
@@ -436,18 +313,31 @@ function setThr(e){ const b=th.getBoundingClientRect(); thr=clamp(1-(e.clientY-b
 th.addEventListener('pointerdown',e=>{ th.setPointerCapture(e.pointerId); setThr(e); });
 th.addEventListener('pointermove',e=>{ if(th.hasPointerCapture(e.pointerId))setThr(e); });
 
+// Visible on-screen stick (roll/pitch)
+const pad=$('pad');
+function setPad(e){
+  const b=pad.getBoundingClientRect(), R=b.width/2;
+  padRoll=clamp((e.clientX-(b.left+R))/(R-10)); padPitch=clamp((e.clientY-(b.top+R))/(R-10));
+}
+pad.addEventListener('pointerdown',e=>{ pad.setPointerCapture(e.pointerId); setPad(e); e.preventDefault(); });
+pad.addEventListener('pointermove',e=>{ if(pad.hasPointerCapture(e.pointerId))setPad(e); });
+const padEnd=()=>{padRoll=0;padPitch=0;};
+pad.addEventListener('pointerup',padEnd); pad.addEventListener('pointercancel',padEnd);
+// Yaw buttons
+[['yL',-1],['yR',1]].forEach(([id,d])=>{
+  const b=$(id);
+  b.addEventListener('pointerdown',e=>{ b.setPointerCapture(e.pointerId); yawBtn=d; e.preventDefault(); });
+  const end=()=>{ if(yawBtn===d) yawBtn=0; };
+  b.addEventListener('pointerup',end); b.addEventListener('pointercancel',end);
+});
+
 const rc=$('r');
 let dragTouchId=null;
 function onDragStart(e){
   if(!dragMode||!started||dragTouchId!==null) return;
-  for(const id of ['thr','tr','tl','bar','msg','mm']){
-    const el=$(id); if(el && el.contains(e.target)) return;
-  }
-  dragTouchId=e.pointerId;
-  dragActive=true; dragStartX=e.clientX; dragStartY=e.clientY; dragCurX=e.clientX; dragCurY=e.clientY;
-  dragRoll=0; dragPitch=0;
-  rc.setPointerCapture(e.pointerId);
-  e.preventDefault();
+  dragTouchId=e.pointerId; dragActive=true;
+  dragStartX=e.clientX; dragStartY=e.clientY; dragCurX=e.clientX; dragCurY=e.clientY; dragRoll=0; dragPitch=0;
+  rc.setPointerCapture(e.pointerId); e.preventDefault();
 }
 function onDragMove(e){
   if(!dragActive||e.pointerId!==dragTouchId) return;
@@ -462,8 +352,7 @@ function onDragEnd(e){
 }
 rc.addEventListener('pointerdown',onDragStart,{passive:false});
 rc.addEventListener('pointermove',onDragMove,{passive:false});
-rc.addEventListener('pointerup',onDragEnd);
-rc.addEventListener('pointercancel',onDragEnd);
+rc.addEventListener('pointerup',onDragEnd); rc.addEventListener('pointercancel',onDragEnd);
 
 function onOri(e){
   if(e.beta==null||e.gamma==null) return;
@@ -472,7 +361,6 @@ function onOri(e){
   if(a===0){rl=g;pt=b;}else if(a===90){rl=b;pt=-g;}else if(a===270){rl=-b;pt=g;}else{rl=-g;pt=-b;}
   raw={rl,pt}; if(!cal)cal={...raw}; clearTimeout(tiltTimer);
 }
-
 async function begin(useTilt,useDrag){
   tilt=false; dragMode=false;
   if(useTilt){
@@ -484,7 +372,7 @@ async function begin(useTilt,useDrag){
     }catch(err){ useTilt=false; useDrag=true; }
     if(useTilt){
       addEventListener('deviceorientation',onOri); tilt=true;
-      tiltTimer=setTimeout(()=>{ msg('No tilt sensor detected. Use touch or keyboard.'); setTimeout(()=>msg(''),5000); },2500);
+      tiltTimer=setTimeout(()=>{ msg('No tilt sensor detected. Use the on-screen stick or keyboard.'); setTimeout(()=>msg(''),5000); },2500);
     }
   }
   if(useDrag){ dragMode=true; dragActive=false; dragTouchId=null; dragRoll=0; dragPitch=0; }
@@ -495,115 +383,81 @@ $('sT').onclick=()=>begin(true,false);
 $('sS').onclick=()=>begin(false,true);
 $('sK').onclick=()=>begin(false,false);
 
-// Physics Loop
 const dq=new Q(), f=new V3(), u=new V3(), r=new V3(), tmp=new V3();
 let last=performance.now(), crashT=0, camPos=new V3(), spin=0;
-const prevP = new V3();
+const prevP=new V3();
 
 function step(dt){
   prevP.copy(p);
   f.set(0,0,-1).applyQuaternion(q); u.set(0,1,0).applyQuaternion(q); r.set(1,0,0).applyQuaternion(q);
-
   let kr=(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0);
   let kp=(keys.ArrowDown?1:0)-(keys.ArrowUp?1:0);
-  let ky=(keys.KeyD?1:0)-(keys.KeyA?1:0);
-
+  let ky=(keys.KeyD?1:0)-(keys.KeyA?1:0)+yawBtn;
+  kr+=padRoll; kp+=padPitch*(invert?-1:1);
   thr=clamp(thr+((keys.KeyW||keys.ShiftLeft?1:0)-(keys.KeyS||keys.ControlLeft?1:0))*.5*dt,0,1);
-
   if(tilt&&raw&&cal){
     const dz=x=>Math.abs(x)<.07?0:x;
     const tr=dz(clamp((raw.rl-cal.rl)/25)), tp=dz(clamp((raw.pt-cal.pt)/20))*(invert?-1:1);
     const k=clamp(dt*10,0,1); tRoll+=(tr-tRoll)*k; tPitch+=(tp-tPitch)*k;
     kr+=tRoll; kp+=tPitch;
   }
-  if(dragMode && dragActive){ kr += dragRoll; kp += dragPitch; }
-
+  if(dragMode&&dragActive){ kr+=dragRoll; kp+=dragPitch; }
   kr=clamp(kr); kp=clamp(kp); ky=clamp(ky);
+  dispRoll=kr; dispPitch=kp;
   const spdF=v.dot(f);
-
   q.multiply(dq.setFromAxisAngle(X,kp*1.1*dt));
   if(kr!==0||!assist) q.multiply(dq.setFromAxisAngle(Z,-kr*2.4*dt));
   else if(Math.abs(kr)<.05) q.multiply(dq.setFromAxisAngle(Z,-r.y*2*dt));
   q.multiply(dq.setFromAxisAngle(Y,-ky*.5*dt));
   q.premultiply(dq.setFromAxisAngle(Y,r.y*.9*dt));
-
   if(spdF<15) q.multiply(dq.setFromAxisAngle(X,-(15-clamp(spdF,0,15))*.04*dt));
   q.normalize();
-
   f.set(0,0,-1).applyQuaternion(q); u.set(0,1,0).applyQuaternion(q);
-
   const te=bat>0?thr:0; bat=Math.max(0,bat-thr*dt*.12);
   const s=Math.max(0,v.dot(f)), lift=10*Math.min(1,s*s/361);
-
   tmp.copy(f).multiplyScalar(te*16).addScaledVector(u,lift).addScaledVector(v,-v.length()*.0085);
-  tmp.y-=9.8;
-  v.addScaledVector(tmp,dt);
-
+  tmp.y-=9.8; v.addScaledVector(tmp,dt);
   const along=v.dot(f);
   tmp.copy(v).addScaledVector(f,-along).multiplyScalar(Math.exp(-2.2*dt));
   v.copy(f).multiplyScalar(along).add(tmp);
-
   p.addScaledVector(v,dt); spin=te;
-
-  checkRings(prevP, p);
-
+  checkRings(prevP,p);
   const onRw=Math.abs(p.x)<15&&Math.abs(p.z)<450;
   const gh=hgt(p.x,p.z)+(onRw?.3:0);
-
   if(p.y-gh<=1){
-    const vs=v.y;
-    const canLand = ringsUnlockedLanding;
-    const softLand = vs>-4.5 && v.length()<32 && u.y>.8;
-
-    if(softLand && canLand && onRw){
-      state='landed'; p.y=gh+1; v.y=0; timerRunning = false;
+    const softLand=v.y>-4.5&&v.length()<32&&u.y>.8, canLand=ringsUnlockedLanding;
+    if(softLand&&canLand&&onRw){
+      state='landed'; p.y=gh+1; v.y=0; timerRunning=false;
       msg(`Landed safely! Final Flight Time: ${formatTime(elapsedTime)}`);
-    } else if(softLand && !onRw){
-      state='crashed'; crashT=2; timerRunning = false;
-      msg(ringsUnlockedLanding ? 'Off runway — align with the runway to land!' : 'Clear all 10 SBS RANGSIT rings first!');
-    } else if(softLand && onRw && !canLand){
-      state='crashed'; crashT=2; timerRunning = false;
+    } else if(softLand&&!onRw){
+      state='crashed'; crashT=2; timerRunning=false;
+      msg(ringsUnlockedLanding?'Off runway — align with the runway to land!':'Clear all 10 SBS RANGSIT rings first!');
+    } else if(softLand&&onRw&&!canLand){
+      state='crashed'; crashT=2; timerRunning=false;
       msg(`Clear all 10 rings to unlock landing (${ringsCleared}/${RING_N}).`);
-    } else {
-      state='crashed'; crashT=3; timerRunning = false; msg('Crashed. Restarting…');
-    }
+    } else { state='crashed'; crashT=3; timerRunning=false; msg('Crashed. Restarting…'); }
   }
-
   if(Math.hypot(p.x,p.z)>4200){ reset(); }
 }
 
 function frame(now){
   requestAnimationFrame(frame);
   const dt=Math.min(.05,(now-last)/1000); last=now;
-
   if(started){
-    if(state==='fly'){
-      step(dt);
-      if(timerRunning) elapsedTime += dt;
-    }
+    if(state==='fly'){ step(dt); if(timerRunning) elapsedTime+=dt; }
     else if(state==='landed'){ v.multiplyScalar(Math.exp(-.7*dt)); p.addScaledVector(v,dt); p.y=hgt(p.x,p.z)+1.3; spin=0; }
     else if(state==='crashed'){ spin=0; crashT-=dt; if(crashT<=0) reset(); }
   }
-
   f.set(0,0,-1).applyQuaternion(q); u.set(0,1,0).applyQuaternion(q); r.set(1,0,0).applyQuaternion(q);
   plane.position.copy(p); plane.quaternion.copy(q); prop.rotation.z+=spin*60*dt;
-
   if(mode===0){ cam.position.copy(p); cam.quaternion.copy(q); }
   else if(mode===1){
     tmp.copy(p).addScaledVector(f,-14).addScaledVector(u,4);
     camPos.lerp(tmp,1-Math.exp(-6*dt)); cam.position.copy(camPos); cam.up.set(0,1,0);
     cam.lookAt(tmp.copy(p).addScaledVector(f,10));
-  } else {
-    cam.position.set(40,6,350); cam.up.set(0,1,0); cam.lookAt(p);
-  }
-
+  } else { cam.position.set(40,6,350); cam.up.set(0,1,0); cam.lookAt(p); }
   renderer.render(scene,cam);
-
-  const hdg=(Math.atan2(f.x,-f.z)*57.3+360)%360;
-  const gh=hgt(p.x,p.z);
-  const spd=v.length();
-  const agl=Math.max(0,p.y-gh);
-
+  const hdg=(Math.atan2(f.x,-f.z)*57.3+360)%360, gh=hgt(p.x,p.z), spd=v.length(), agl=Math.max(0,p.y-gh);
   $('tm').textContent=formatTime(elapsedTime);
   $('sp').textContent=spd.toFixed(1);
   $('al').textContent=agl.toFixed(0);
@@ -614,11 +468,10 @@ function frame(now){
   $('hd').textContent=String(Math.round(hdg)%360).padStart(3,'0')+'°';
   $('rg').textContent=`${ringsCleared}/${RING_N}`;
   $('bt').textContent=Math.round(bat)+'%';
-
+  $('knob').style.transform=`translate(${dispRoll*47}px,${dispPitch*47}px)`;
   drawHud(f,r,u,hdg,spd,agl);
   drawMiniMap();
 }
-
 requestAnimationFrame(frame);
 </script>
 </body>
