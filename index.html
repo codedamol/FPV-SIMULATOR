@@ -258,7 +258,7 @@ function checkRings(prevP,curP){
         ringsUnlockedLanding=true; msg('SBS RANGSIT Course Cleared! You may land now!');
         setTimeout(()=>{ if($('msg').textContent.indexOf('SBS')===0) msg(''); },4000);
       } else {
-        msg(`Ring ${ringsCleared}/${RING_N} Passed! (SBS RANGSIT)`);
+        msg(`Ring ${ringsCleared}/${RING_N} Passed! (Go!)`);
         setTimeout(()=>{ if($('msg').textContent.indexOf('Ring')===0) msg(''); },1200);
       }
     }
