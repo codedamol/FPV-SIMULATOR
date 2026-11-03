@@ -57,84 +57,40 @@ button.on{background:var(--acc);color:#06121f}
 #kv{font-size:30px}
 #cm{margin-top:2px;font-size:14px;opacity:.9;cursor:pointer;padding:4px 0}
 
-/* --- Reference FPV HUD layout --- */
-#tl{
-  top:calc(env(safe-area-inset-top,0px) + 8px);
-  left:8px;
-  padding:8px 12px;
-  border-radius:12px;
-  background:rgba(8,24,48,.78);
-  font-weight:800;
-  letter-spacing:.2px;
-}
-#mm{
-  top:calc(env(safe-area-inset-top,0px) + 40px);
-  left:8px;
-  width:130px;height:130px;
-  border:2px solid #9ae6ff;
-  box-shadow:0 0 0 1px rgba(255,255,255,.2);
-}
-#tr{
-  top:calc(env(safe-area-inset-top,0px) + 8px);
-  right:8px;
-  max-width:min(62vw,560px);
-  gap:6px;
-}
-#tr button{
-  padding:9px 12px;
-  border-radius:9px;
-  background:rgba(8,24,48,.78);
-  font-size:12px;
-  font-weight:800;
-}
-#tr button.on{background:#9ae6ff;color:#06121f}
-#bar{
-  bottom:calc(env(safe-area-inset-bottom,0px) + 10px);
-  max-width:calc(100vw - 24px);
-  display:flex;
-  flex-wrap:nowrap;
-  overflow-x:auto;
-  border-radius:11px;
-  background:rgba(22,43,35,.82);
-  backdrop-filter:blur(5px);
-}
-#bar div{padding:7px 11px;min-width:58px}
-#bar i{font-size:10px}
-#bar b{font-size:15px}
-#cp{
-  bottom:calc(env(safe-area-inset-bottom,0px) + 86px);
-  min-width:205px;
-  border-radius:14px;
-  padding:9px 18px;
-  background:rgba(24,27,24,.88);
-}
-#kv{font-size:30px}
-#cp small{font-size:14px}
-#pad,#lpad{
-  width:132px;height:132px;
-  border-radius:18px;
-  border:2px solid rgba(255,255,255,.85);
-  background:rgba(20,24,28,.45);
-}
-#pad{right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 90px)}
-#lpad{left:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 90px)}
-#pad::before,#lpad::before{top:0;bottom:0;background:rgba(255,255,255,.4)}
-#pad::after,#lpad::after{left:0;right:0;background:rgba(255,255,255,.4)}
-#knob,#lknob{
-  width:26px;height:26px;margin:-13px 0 0 -13px;
-  background:#2bff4f;opacity:1;
-  box-shadow:0 0 8px #2bff4f;
-}
-@media(max-width:650px){
-  #tr{max-width:calc(100vw - 155px);gap:4px}
-  #tr button{padding:7px 8px;font-size:10px}
-  #mm{width:104px;height:104px}
-  #pad,#lpad{width:108px;height:108px}
-  #bar{max-width:calc(100vw - 12px)}
-  #bar div{padding:6px 7px;min-width:49px}
-  #bar b{font-size:12px}
-  #cp{bottom:calc(env(safe-area-inset-bottom,0px) + 78px);min-width:160px}
-  #kv{font-size:25px}
+/* ==== SBS FPV ACADEMY HUD / REPORT UPGRADE ==== */
+#tl{font-weight:900;letter-spacing:.08em;background:rgba(5,16,34,.82);border:1px solid rgba(154,230,255,.55);box-shadow:0 5px 24px #07132155}
+#tr{max-width:min(72vw,760px);gap:7px}
+#tr button{background:rgba(7,20,40,.82);border:1px solid rgba(180,225,255,.32);box-shadow:0 4px 14px #07132133}
+#tr button.on{background:#9ae6ff;color:#06121f;border-color:#d9f7ff}
+#bar{background:rgba(5,16,30,.84);border:1px solid rgba(154,230,255,.35);border-radius:13px;box-shadow:0 8px 28px #07132155}
+#bar div{min-width:64px;padding:9px 12px}
+#bar i{font-size:9px;letter-spacing:.12em;color:#a9cce2}
+#bar b{font-size:16px;font-variant-numeric:tabular-nums}
+#cp{background:rgba(5,16,30,.84);border:1px solid rgba(154,230,255,.42);box-shadow:0 8px 28px #07132155}
+#mm{box-shadow:0 5px 24px #07132155}
+#modeBadge{position:fixed;top:calc(env(safe-area-inset-top,0px) + 185px);left:12px;z-index:3;padding:7px 11px;border:1px solid rgba(154,230,255,.45);border-radius:9px;background:rgba(5,16,30,.78);font-size:11px;letter-spacing:.1em}
+#report{position:fixed;z-index:10;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92vw,560px);max-height:82vh;overflow:auto;display:none;padding:20px;border:1px solid rgba(154,230,255,.55);border-radius:18px;background:rgba(5,15,29,.96);box-shadow:0 18px 70px #000a;backdrop-filter:blur(14px)}
+#report h2{margin:0 0 5px;font-size:22px}
+#report .sub{color:#a9cce2;font-size:12px;margin-bottom:16px}
+#reportGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+#reportGrid .metric{padding:11px;border:1px solid rgba(154,230,255,.2);border-radius:10px;background:rgba(154,230,255,.07)}
+#reportGrid small{display:block;color:#a9cce2;font-size:10px;letter-spacing:.1em}
+#reportGrid b{display:block;font-size:19px;margin-top:3px;font-variant-numeric:tabular-nums}
+#reportActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+#reportActions button{flex:1}
+#report .grade{font-size:13px;color:#9ae6ff;margin:10px 0}
+#bMode{border-color:#9ae6ff}
+@media(max-width:700px){
+ #tr{max-width:78vw;gap:4px}
+ #tr button{padding:7px 8px;font-size:10px}
+ #modeBadge{top:185px}
+ #bar{width:calc(100vw - 18px);justify-content:space-around;bottom:calc(env(safe-area-inset-bottom,0px) + 8px)}
+ #bar div{min-width:0;flex:1;padding:6px 3px;text-align:center}
+ #bar b{font-size:12px}
+ #bar i{font-size:8px}
+ #cp{bottom:calc(env(safe-area-inset-bottom,0px) + 82px);min-width:145px;padding:5px 12px}
+ #kv{font-size:24px}
+ #report{padding:15px}
 }
 
 </style>
@@ -145,7 +101,7 @@ button.on{background:var(--acc);color:#06121f}
 <div class="p" id="tl"><span id="cam">FPV</span> · <span id="ctl">KEYS</span></div>
 <div class="p" id="mm"><canvas id="mmc" width="260" height="260"></canvas></div>
 <div id="tr" class="p">
-  <button id="bC">Camera</button><button id="bR">Reset</button><button id="bK">Calibrate</button><button id="bI">Invert pitch</button><button id="bA" class="on">Assist</button><button id="bP">Pause</button><button id="bL">Leaderboard</button><button id="bS" class="on">Sound</button><button id="bF">Fullscreen</button>
+  <button id="bC">Camera</button><button id="bR">Reset</button><button id="bK">Calibrate</button><button id="bI">Invert pitch</button><button id="bA" class="on">Assist</button><button id="bMode">Flight: Assist</button><button id="bP">Pause</button><button id="bL">Leaderboard</button><button id="bS" class="on">Sound</button><button id="bF">Fullscreen</button>
 </div>
 <div class="p" id="thr" style="display:none"><div id="fill"></div><div id="tv">THROTTLE 50%</div></div>
 <div class="p" id="pad"><div id="knob"></div></div>
@@ -154,7 +110,18 @@ button.on{background:var(--acc);color:#06121f}
 <div class="p" id="lb" style="display:none"></div>
 <div class="p" id="bar"></div>
 <div class="p" id="cp"><div><b id="kv">0</b> <small>km/h</small></div><div id="cm">Cam <b id="ca">0°</b></div></div>
+<div id="modeBadge">FLIGHT MODE · ASSIST</div>
 <div class="p" id="msg"></div>
+<div id="report">
+  <h2>✦ SBS RANGSIT · FLIGHT REPORT</h2>
+  <div class="sub" id="reportSub">Student performance summary</div>
+  <div id="reportGrid"></div>
+  <div class="grade" id="reportGrade"></div>
+  <div id="reportActions">
+    <button id="reportCSV">Export CSV</button>
+    <button id="reportClose">Close report</button>
+  </div>
+</div>
 <div class="p" id="start">
   <h1>SBS RANGSIT FPV Simulator</h1>
   <p>Fly through <b>all 10 branded rings</b> as fast as you can — only then can you land safely on the runway. Your total flight time will be tracked!</p>
@@ -164,8 +131,7 @@ button.on{background:var(--acc);color:#06121f}
   <button id="sT">Start with tilt (tablet)</button>
   <button id="sS">Start with screen drag (iPad touch)</button>
   <button id="sK">Start with keyboard</button>
-  <p>Keyboard: arrows = roll/pitch (Up = nose down), A/D = yaw, W/S = throttle, C = camera, R = reset. On touch: left stick = throttle (up/down) + yaw (left/right), right stick = roll/pitch. </p>
-  <p>Dev. John.e@sbs.ac.th</p>
+  <p>Keyboard: arrows = roll/pitch (Up = nose down), A/D = yaw, W/S = throttle, C = camera, M = flight mode, R = reset. On touch: left stick = throttle (up/down) + yaw (left/right), right stick = roll/pitch.</p>
   <p id="note"></p>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -386,6 +352,7 @@ function checkRings(prevP,curP){
 }
 
 let p=new V3(), q=new Q(), v=new V3(), thr=.5, bat=100, state='fly', mode=0, assist=true, invert=false, started=false;
+let flightMode='assist', flightStats={maxAlt:0,speedTotal:0,samples:0,collisions:0}, latestReport=null;
 let tilt=false, tiltTimer=0, dragMode=false;
 const keys={}; let raw=null, cal=null, tRoll=0, tPitch=0;
 let dragActive=false, dragStartX=0, dragStartY=0, dragCurX=0, dragCurY=0, dragRoll=0, dragPitch=0;
@@ -393,6 +360,7 @@ let padRoll=0, padPitch=0, yawBtn=0, dispRoll=0, dispPitch=0;
 
 function reset(){
   p.set(0,80,1000); q.identity(); v.set(0,0,-22); thr=.5; bat=100; state='fly'; msg('');
+  flightStats={maxAlt:0,speedTotal:0,samples:0,collisions:0}; $('report').style.display='none';
   dragRoll=0; dragPitch=0; resetRings(); showLB(false); loadGhost(); rec=[];
 }
 function msg(t){ const m=$('msg'); m.style.display=t?'block':'none'; m.textContent=t; }
@@ -472,6 +440,7 @@ addEventListener('keydown',e=>{
   if(e.code==='KeyC')camNext();
   if(e.code==='KeyR')reset();
   if(e.code==='KeyP')togglePause();
+  if(e.code==='KeyM')cycleFlightMode();
   if(e.code==='Digit1'){mode=0;camLbl();}
   if(e.code==='Digit2'){mode=1;camLbl();}
   if(e.code==='Digit3'){mode=2;camLbl();}
@@ -485,7 +454,22 @@ mode=0; camLbl(); // default POV = FPV (plane hidden, HUD on)
 $('bC').onclick=camNext; $('bR').onclick=reset;
 $('bK').onclick=()=>{if(raw)cal={...raw};};
 $('bI').onclick=e=>{invert=!invert; e.target.classList.toggle('on',invert);};
-$('bA').onclick=e=>{assist=!assist; e.target.classList.toggle('on',assist);};
+function setFlightMode(next){
+  flightMode=next; assist=next!=='acro';
+  const labels={assist:'Flight: Assist',angle:'Flight: Angle',acro:'Flight: Acro'};
+  $('bMode').textContent=labels[next];
+  $('modeBadge').textContent='FLIGHT MODE · '+next.toUpperCase();
+  $('bMode').classList.toggle('on',next==='assist');
+  $('bA').classList.toggle('on',assist);
+  $('bA').textContent=assist?'Stabilized':'Manual';
+}
+function cycleFlightMode(){
+  const order=['assist','angle','acro'];
+  setFlightMode(order[(order.indexOf(flightMode)+1)%order.length]);
+}
+$('bMode').onclick=cycleFlightMode;
+$('bA').onclick=cycleFlightMode;
+setFlightMode('assist');
 $('bF').onclick=()=>{const d=document.documentElement; (d.requestFullscreen||d.webkitRequestFullscreen||(()=>{})).call(d);};
 
 const th=$('thr');
@@ -738,13 +722,26 @@ function step(dt){
     kr+=tRoll; kp+=tPitch;
   }
   if(dragMode&&dragActive){ kr+=dragRoll; kp+=dragPitch; }
-  kr=clamp(kr); kp=clamp(kp); ky=clamp(ky);
+  // Flight-mode response: Assist = forgiving stabilization, Angle = self-level + tilt limit,
+  // Acro = fully manual rotation response without automatic roll leveling.
+  if(flightMode==='assist'){
+    kr=clamp(kr); kp=clamp(kp); ky=clamp(ky);
+  }else if(flightMode==='angle'){
+    const bankAngle=Math.atan2(-r.y,u.y);
+    const pitchAngle=Math.asin(clamp(f.y));
+    kr=clamp(kr + clamp(-bankAngle*1.7,-.75,.75));
+    kp=clamp(kp + clamp(-pitchAngle*1.5,-.65,.65));
+    ky=clamp(ky);
+  }else{
+    kr=clamp(kr); kp=clamp(kp); ky=clamp(ky);
+  }
   dispRoll=kr; dispPitch=kp; dispYaw=ky;
   const spdF=v.dot(f);
-  q.multiply(dq.setFromAxisAngle(X,kp*1.1*dt));
-  if(kr!==0||!assist) q.multiply(dq.setFromAxisAngle(Z,-kr*2.4*dt));
-  else if(Math.abs(kr)<.05) q.multiply(dq.setFromAxisAngle(Z,-r.y*2*dt));
-  q.multiply(dq.setFromAxisAngle(Y,-ky*.5*dt));
+  const rotationRate=flightMode==='acro'?3.0:(flightMode==='angle'?1.9:1.35);
+  q.multiply(dq.setFromAxisAngle(X,kp*(flightMode==='acro'?1.8:1.1)*dt));
+  if(kr!==0||flightMode==='acro') q.multiply(dq.setFromAxisAngle(Z,-kr*rotationRate*dt));
+  else if(Math.abs(kr)<.05) q.multiply(dq.setFromAxisAngle(Z,-r.y*(flightMode==='angle'?3.2:2.0)*dt));
+  q.multiply(dq.setFromAxisAngle(Y,-ky*(flightMode==='acro'?.85:.5)*dt));
   q.premultiply(dq.setFromAxisAngle(Y,r.y*.9*dt));
   if(spdF<15) q.multiply(dq.setFromAxisAngle(X,-(15-clamp(spdF,0,15))*.04*dt));
   q.normalize();
@@ -764,17 +761,56 @@ function step(dt){
     const softLand=v.y>-4.5&&v.length()<32&&u.y>.8, canLand=ringsUnlockedLanding;
     if(softLand&&canLand&&onRw){
       state='landed'; p.y=gh+1; v.y=0; timerRunning=false;
-      msg(`Landed safely! Final Flight Time: ${formatTime(elapsedTime)}`); saveScore();
+      msg(`Landed safely! Final Flight Time: ${formatTime(elapsedTime)}`); saveScore(); showFlightReport(true);
     } else if(softLand&&!onRw){
-      state='crashed'; crashT=2; timerRunning=false;
+      state='crashed'; crashT=2; timerRunning=false; flightStats.collisions++;
       msg(ringsUnlockedLanding?'Off runway — align with the runway to land!':'Clear all 10 SBS RANGSIT rings first!');
     } else if(softLand&&onRw&&!canLand){
-      state='crashed'; crashT=2; timerRunning=false;
+      state='crashed'; crashT=2; timerRunning=false; flightStats.collisions++;
       msg(`Clear all 10 rings to unlock landing (${ringsCleared}/${RING_N}).`);
-    } else { state='crashed'; crashT=3; timerRunning=false; msg('Crashed. Restarting…'); }
+    } else { state='crashed'; crashT=3; timerRunning=false; flightStats.collisions++; msg('Crashed. Restarting…'); }
   }
   if(Math.hypot(p.x,p.z)>4200){ reset(); }
 }
+
+
+function showFlightReport(landed){
+  const avg=flightStats.samples?flightStats.speedTotal/flightStats.samples:0;
+  const score=Math.max(0,Math.round((ringsCleared/RING_N)*60 + (landed?25:0) + Math.max(0,15-flightStats.collisions*5)));
+  const grade=score>=90?'Excellent flight':score>=75?'Good flight':score>=60?'Developing flight':'Keep practising';
+  latestReport={
+    student:pilotName,difficulty:diff,flightMode,weather:tod,
+    time:+elapsedTime.toFixed(1),rings:ringsCleared+'/'+RING_N,
+    avgSpeed:+(avg*3.6).toFixed(1),maxSpeed:+(flightStats.maxSpeed||0).toFixed(1),
+    maxAltitude:+flightStats.maxAlt.toFixed(1),collisions:flightStats.collisions,
+    battery:Math.round(bat),landing:landed?'Successful':'Not completed',
+    score,grade
+  };
+  const rows=[
+    ['STUDENT',latestReport.student],['FLIGHT TIME',formatTime(latestReport.time)],
+    ['RINGS CLEARED',latestReport.rings],['AVERAGE SPEED',latestReport.avgSpeed+' km/h'],
+    ['MAX SPEED',latestReport.maxSpeed+' km/h'],['MAX ALTITUDE',latestReport.maxAltitude+' m'],
+    ['COLLISIONS',latestReport.collisions],['BATTERY LEFT',latestReport.battery+'%'],
+    ['FLIGHT MODE',latestReport.flightMode.toUpperCase()],['LANDING',latestReport.landing]
+  ];
+  $('reportSub').textContent=DL[diff]+' difficulty · '+tod+' · '+new Date().toLocaleString();
+  $('reportGrid').innerHTML=rows.map(x=>'<div class="metric"><small>'+x[0]+'</small><b>'+String(x[1]).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))+'</b></div>').join('');
+  $('reportGrade').textContent='PERFORMANCE SCORE · '+score+'/100 — '+grade;
+  $('report').style.display='block';
+  try{
+    const all=JSON.parse(localStorage.getItem('sbsFlightReports')||'[]');
+    all.push(latestReport); localStorage.setItem('sbsFlightReports',JSON.stringify(all.slice(-200)));
+  }catch(e){}
+}
+$('reportClose').onclick=()=>{$('report').style.display='none';};
+$('reportCSV').onclick=()=>{
+  if(!latestReport)return;
+  const keys=Object.keys(latestReport);
+  const csv=[keys.join(','),keys.map(k=>'"'+String(latestReport[k]).replace(/"/g,'""')+'"').join(',')].join('\r\n');
+  const a=document.createElement('a'), u=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.href=u; a.download='SBS_FPV_Flight_Report_'+latestReport.student.replace(/[^a-z0-9_-]/gi,'_')+'.csv';
+  a.click(); URL.revokeObjectURL(u);
+};
 
 function frame(now){
   requestAnimationFrame(frame);
@@ -794,6 +830,7 @@ function frame(now){
   } else { cam.position.set(40,6,350); cam.up.set(0,1,0); cam.lookAt(p); }
   renderer.render(scene,cam);
   const hdg=(Math.atan2(f.x,-f.z)*57.3+360)%360, gh=hgt(p.x,p.z), spd=v.length(), agl=Math.max(0,p.y-gh);
+  if(started&&state==='fly'){flightStats.maxAlt=Math.max(flightStats.maxAlt,agl);flightStats.maxSpeed=Math.max(flightStats.maxSpeed||0,spd*3.6);flightStats.speedTotal+=spd;flightStats.samples++;}
   $('tm').textContent=formatTime(elapsedTime);
   $('sp').textContent=spd.toFixed(1);
   $('al').textContent=agl.toFixed(0);
