@@ -56,6 +56,87 @@ button.on{background:var(--acc);color:#06121f}
 #cp small{font-size:15px;font-weight:500;opacity:.85}
 #kv{font-size:30px}
 #cm{margin-top:2px;font-size:14px;opacity:.9;cursor:pointer;padding:4px 0}
+
+/* --- Reference FPV HUD layout --- */
+#tl{
+  top:calc(env(safe-area-inset-top,0px) + 8px);
+  left:8px;
+  padding:8px 12px;
+  border-radius:12px;
+  background:rgba(8,24,48,.78);
+  font-weight:800;
+  letter-spacing:.2px;
+}
+#mm{
+  top:calc(env(safe-area-inset-top,0px) + 40px);
+  left:8px;
+  width:130px;height:130px;
+  border:2px solid #9ae6ff;
+  box-shadow:0 0 0 1px rgba(255,255,255,.2);
+}
+#tr{
+  top:calc(env(safe-area-inset-top,0px) + 8px);
+  right:8px;
+  max-width:min(62vw,560px);
+  gap:6px;
+}
+#tr button{
+  padding:9px 12px;
+  border-radius:9px;
+  background:rgba(8,24,48,.78);
+  font-size:12px;
+  font-weight:800;
+}
+#tr button.on{background:#9ae6ff;color:#06121f}
+#bar{
+  bottom:calc(env(safe-area-inset-bottom,0px) + 10px);
+  max-width:calc(100vw - 24px);
+  display:flex;
+  flex-wrap:nowrap;
+  overflow-x:auto;
+  border-radius:11px;
+  background:rgba(22,43,35,.82);
+  backdrop-filter:blur(5px);
+}
+#bar div{padding:7px 11px;min-width:58px}
+#bar i{font-size:10px}
+#bar b{font-size:15px}
+#cp{
+  bottom:calc(env(safe-area-inset-bottom,0px) + 86px);
+  min-width:205px;
+  border-radius:14px;
+  padding:9px 18px;
+  background:rgba(24,27,24,.88);
+}
+#kv{font-size:30px}
+#cp small{font-size:14px}
+#pad,#lpad{
+  width:132px;height:132px;
+  border-radius:18px;
+  border:2px solid rgba(255,255,255,.85);
+  background:rgba(20,24,28,.45);
+}
+#pad{right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 90px)}
+#lpad{left:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 90px)}
+#pad::before,#lpad::before{top:0;bottom:0;background:rgba(255,255,255,.4)}
+#pad::after,#lpad::after{left:0;right:0;background:rgba(255,255,255,.4)}
+#knob,#lknob{
+  width:26px;height:26px;margin:-13px 0 0 -13px;
+  background:#2bff4f;opacity:1;
+  box-shadow:0 0 8px #2bff4f;
+}
+@media(max-width:650px){
+  #tr{max-width:calc(100vw - 155px);gap:4px}
+  #tr button{padding:7px 8px;font-size:10px}
+  #mm{width:104px;height:104px}
+  #pad,#lpad{width:108px;height:108px}
+  #bar{max-width:calc(100vw - 12px)}
+  #bar div{padding:6px 7px;min-width:49px}
+  #bar b{font-size:12px}
+  #cp{bottom:calc(env(safe-area-inset-bottom,0px) + 78px);min-width:160px}
+  #kv{font-size:25px}
+}
+
 </style>
 </head>
 <body>
