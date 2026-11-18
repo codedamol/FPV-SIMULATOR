@@ -64,6 +64,13 @@ button.on{background:var(--acc);color:#06121f;border-color:#d9f7ff}
 #reportActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
 #reportActions button{flex:1}
 #report .grade{font-size:13px;color:#9ae6ff;margin:10px 0}
+#qz{top:50%;left:50%;transform:translate(-50%,-50%);width:min(88vw,520px);padding:16px 18px;z-index:7;text-align:center;border:1px solid rgba(154,230,255,.55);background:rgba(5,15,29,.94)}
+#qz h3{margin:0 0 6px;font-size:16px;color:var(--acc)}#qz small{opacity:.8;font-weight:500}
+#qq{font-size:18px;margin:10px 0}#qa{font-size:15px;color:var(--warn);margin:8px 0}
+#qz .row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px}
+#ch{top:calc(env(safe-area-inset-top,0px) + 104px);left:50%;transform:translateX(-50%);width:min(54vw,400px);padding:10px 14px;z-index:5;text-align:center;border:1px solid var(--warn);background:rgba(5,15,29,.9)}
+#ch b{color:var(--warn);font-size:12px;letter-spacing:.1em}#ct{font-size:16px;margin:6px 0}#ck{font-size:15px;color:var(--acc);margin:6px 0}
+#ch .row{display:flex;gap:8px;justify-content:center;margin-top:6px}#ch button{padding:6px 12px;font-size:12px}
 @media(max-width:700px){
  #tr{max-width:78vw;gap:4px}#tr button{padding:7px 8px;font-size:10px}
  #bar{width:calc(100vw - 18px);justify-content:space-around;bottom:calc(env(safe-area-inset-bottom,0px) + 8px)}
@@ -79,7 +86,7 @@ button.on{background:var(--acc);color:#06121f;border-color:#d9f7ff}
 <div class="p" id="tl"><span id="cam">FPV</span> · <span id="ctl">KEYS</span></div>
 <div class="p" id="mm"><canvas id="mmc" width="260" height="260"></canvas></div>
 <div id="tr" class="p">
-  <button id="bC">Camera</button><button id="bR">Reset</button><button id="bK">Calibrate</button><button id="bI">Invert pitch</button><button id="bA" class="on">Assist</button><button id="bMode">Flight: Assist</button><button id="bLv">Level 1</button><button id="bP">Pause</button><button id="bL">Leaderboard</button><button id="bS" class="on">Sound</button><button id="bF">Fullscreen</button>
+  <button id="bC">Camera</button><button id="bR">Reset</button><button id="bK">Calibrate</button><button id="bI">Invert pitch</button><button id="bA" class="on">Assist</button><button id="bMode">Flight: Assist</button><button id="bLv">Level 1</button><button id="bP">Pause</button><button id="bQ" class="on">Paper Q</button><button id="bX" class="on">Quick Tasks</button><button id="bL">Leaderboard</button><button id="bS" class="on">Sound</button><button id="bF">Fullscreen</button>
 </div>
 <div class="p" id="thr" style="display:none"><div id="fill"></div><div id="tv">THROTTLE 50%</div></div>
 <div class="p" id="pad"><div id="knob"></div></div>
@@ -90,6 +97,8 @@ button.on{background:var(--acc);color:#06121f;border-color:#d9f7ff}
 <div class="p" id="cp"><div><b id="kv">0</b> <small>km/h</small></div><div id="cm">Cam <b id="ca">0°</b></div></div>
 <div id="modeBadge">FLIGHT MODE · ASSIST</div>
 <div class="p" id="msg"></div>
+<div class="p" id="ch" style="display:none"><b>✏️ QUICK TASK · WRITE ON PAPER</b><div id="ct"></div><div id="ck" style="display:none"></div><div class="row"><button id="cC">Check answer</button><button id="cD">Done</button></div></div>
+<div class="p" id="qz" style="display:none"><h3>✏️ PAPER QUESTION</h3><small>Write your answer on paper first, then check it.</small><div id="qq"></div><div id="qa" style="display:none"></div><div class="row"><button id="qS">Show answer</button><button id="qN">Next question</button><button id="qR">Resume flight</button></div></div>
 <div id="report">
   <h2>✦ SBS RANGSIT · FLIGHT REPORT</h2>
   <div class="sub" id="reportSub"></div>
@@ -645,8 +654,51 @@ document.querySelectorAll('.sel').forEach(g=>g.addEventListener('click',e=>{
   g.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
   if(g.id==='selL') setLevel(+b.dataset.v); else if(g.id==='selD'){diff=b.dataset.v; applyDifficulty();} else {tod=b.dataset.v; if(isOut())applyTod();}
 }));
-function togglePause(){if(!started||state!=='fly')return; paused=!paused; $('bP').textContent=paused?'Resume':'Pause'; msg(paused?'Paused':'');}
+function togglePause(){if(!started||state!=='fly')return; paused=!paused; $('bP').textContent=paused?'Resume':'Pause'; showQz(paused);}
 $('bP').onclick=togglePause;
+const QB={
+easy:[['What are the spinning parts that push air down and lift a drone called?','Propellers.'],['What gives a drone the power to fly?','The battery. It powers the motors.'],['FPV stands for what?','First Person View: you see what the drone camera sees.'],['What does the throttle control?','How fast the motors spin, so the drone goes up or down.'],['Write 2 safety rules for flying a drone.','Examples: keep away from people and faces, fly in an open area, check the battery, never fly near roads.'],['Draw a drone and label 3 parts.','Body, arms, motors, propellers, camera, battery, flight controller.']],
+normal:[['Describe roll, pitch and yaw.','Roll tilts left/right, pitch tilts nose up/down, yaw turns left/right.'],['Why do 2 propellers spin clockwise and 2 counter-clockwise?','Their torques cancel out, so the drone does not spin around by itself.'],['What does the flight controller do?','It is the brain: it reads the gyro/sensors and adjusts each motor to keep the drone stable.'],['A drone flies at 36 km/h for 10 s. How far does it travel?','36 km/h = 10 m/s, so 10 x 10 = 100 m.'],['What is the job of an ESC?','The Electronic Speed Controller tells each motor how fast to spin, using signals from the flight controller.'],['Name the 4 forces acting on an aircraft.','Lift, weight (gravity), thrust and drag.']],
+hard:[['Why must a LiPo battery never be drained too low?','Below about 3.3 V per cell it gets damaged and can become a fire risk.'],['How does a quadcopter yaw using only motor speed?','Speed up one diagonal pair (same spin direction) and slow the other pair. The unbalanced torque turns the body.'],['A drone has a mass of 1 kg (g = 9.8 m/s2). What thrust is needed to hover?','Thrust = weight = 1 x 9.8 = 9.8 N, about 2.45 N per motor.'],['What is latency in FPV and why does it matter?','The delay between the camera and your screen. High latency means late reactions and crashes.'],['Compare Angle mode and Acro mode.','Angle self-levels and limits the tilt. Acro has no self-leveling: the sticks control rotation rate, so it is harder.'],['Ring A is at (0,10,0) and ring B at (30,10,40). How far apart are they?','sqrt(30^2 + 40^2) = sqrt(2500) = 50 m.']]};
+let qzOn=true, qzK=Math.floor(Math.random()*6);
+function nextQz(){const a=QB[diff]||QB.normal; qzK=(qzK+1)%a.length; $('qq').textContent=a[qzK][0]; $('qa').textContent='Answer: '+a[qzK][1]; $('qa').style.display='none'; $('qS').textContent='Show answer';}
+function showQz(on){const z=$('qz'); if(!on||!qzOn){z.style.display='none'; msg(on?'Paused':''); return;} msg(''); nextQz(); z.style.display='block';}
+$('qS').onclick=()=>{const a=$('qa'), h=a.style.display==='none'; a.style.display=h?'block':'none'; $('qS').textContent=h?'Hide answer':'Show answer';};
+$('qN').onclick=nextQz; $('qR').onclick=togglePause;
+$('bQ').onclick=e=>{qzOn=!qzOn; e.target.classList.toggle('on',qzOn); if(paused)showQz(true);};
+// ---- random quick tasks while flying (no pause) ----
+let chOn=true, chT=40, chL=0;
+const CHT=[
+['Write down your current SPEED in km/h (big number at the bottom).',(h,s)=>Math.round(s*3.6)+' km/h'],
+['Write down your current HEIGHT in metres.',(h,s,a)=>Math.round(a)+' m'],
+['Write down your HEADING in degrees.',h=>String(Math.round(h)%360).padStart(3,'0')+'°'],
+['Which direction are you facing: N, E, S or W (nearest)?',h=>['N','E','S','W'][Math.round(h/90)%4]],
+['Write down your THROTTLE percentage.',()=>Math.round(thr*100)+'%'],
+['Write down your BATTERY percentage.',()=>Math.round(bat)+'%'],
+['Write down the TIME on the clock.',()=>formatTime(elapsedTime)],
+['How many rings have you passed, and how many are left?',()=>ringsCleared+' passed, '+(RING_N-ringsCleared)+' left'],
+['Are you climbing, descending or level? Write your V/S too.',()=>(v.y>.5?'Climbing':v.y<-.5?'Descending':'Level')+' ('+(v.y>0?'+':'')+v.y.toFixed(1)+' m/s)'],
+['Convert your speed to metres per second (m/s).',(h,s)=>s.toFixed(1)+' m/s'],
+['At this speed, how far would you travel in 10 seconds?',(h,s)=>Math.round(s*10)+' m'],
+['Which ring number is next? Write it down.',()=>ringsCleared<RING_N?'Ring '+(ringsCleared+1):'No rings left: land now!'],
+['Quick sketch: draw the mini-map and mark where you are.',()=>'No fixed answer. Check the sketch with your partner.'],
+['Predict: will you pass the next ring in under 10 seconds? Write YES or NO.',()=>'Watch the clock and see.']];
+function hideCh(){$('ch').style.display='none'; $('ck').style.display='none'; $('cC').textContent='Check answer'; chL=0; chT=30+Math.random()*30;}
+function showCh(h,s,a){
+  let t,ans,live=true;
+  if(Math.random()<.25){const A=QB[diff]||QB.normal, q=A[Math.floor(Math.random()*A.length)]; t=q[0]; ans=q[1]; live=false;}
+  else{const c=CHT[Math.floor(Math.random()*CHT.length)]; t=c[0]; ans=c[1](h,s,a);}
+  $('ct').textContent=t; $('ck').textContent='Answer: '+ans+(live?'  (value when the task appeared)':''); $('ck').style.display='none'; $('cC').textContent='Check answer';
+  $('ch').style.display='block'; chL=30;
+}
+function chTick(dt,h,s,a){
+  if(!started||state!=='fly'||paused||!chOn){if(chL>0)hideCh(); return;}
+  if(chL>0){chL-=dt; if(chL<=0)hideCh(); return;}
+  chT-=dt; if(chT<=0) showCh(h,s,a);
+}
+$('cC').onclick=()=>{const k=$('ck'), hid=k.style.display==='none'; k.style.display=hid?'block':'none'; $('cC').textContent=hid?'Hide answer':'Check answer';};
+$('cD').onclick=hideCh;
+$('bX').onclick=e=>{chOn=!chOn; e.target.classList.toggle('on',chOn); if(!chOn)hideCh();};
 
 function drawGuide(cx,cy){
   if(diff!=='easy'||!started||state!=='fly') return;
@@ -836,7 +888,7 @@ function frame(now){
   $('rg').textContent=ringsCleared+'/'+RING_N; $('bt').textContent=Math.round(bat)+'%';
   $('knob').style.transform='translate('+(dispRoll*47)+'px,'+(dispPitch*47)+'px)';
   $('lknob').style.transform='translate('+(dispYaw*47)+'px,'+((1-2*thr)*47)+'px)';
-  drawHud(f,r,u,hdg,spd,agl); drawMiniMap(); updateAudio(); updateFX(dt); updateGhost(); recGhost();
+  drawHud(f,r,u,hdg,spd,agl); drawMiniMap(); updateAudio(); updateFX(dt); updateGhost(); recGhost(); chTick(dt,hdg,spd,agl);
   $('kv').textContent=Math.round(spd*3.6); $('ca').textContent=camDeg+'°';
 }
 setLevel(1); reset();
